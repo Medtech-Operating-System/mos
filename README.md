@@ -23,6 +23,7 @@ No tool has reached `released`. A tool reaches it with three testers and not bef
 
 | File | What it holds |
 |---|---|
+| `CHARTER.md` | Why MOS exists, who it is for, its principles, the lifecycle map and how it gets built |
 | `context-standard.md` | The folder structure a company adopts for its own files |
 | `tools/TOOL-FORMAT.md` | The contract every tool is written to |
 | `PROVENANCE.md` | Where content may come from, and what is not accepted |

@@ -1,9 +1,9 @@
 # Device profile — {{device}}
 
 Company: {{company}}
-Written: {{date}} · Source: MOS setup tool
+Written: {{date}} · Source: MOS setup skill
 
-The first file every MOS tool reads. Anything marked `Not known yet` is a genuine gap, not an
+The first file every MOS skill reads. Anything marked `Not known yet` is a genuine gap, not an
 oversight — leave it until there is an answer.
 
 Each section notes where its content came from: an existing document (with its path) or the setup

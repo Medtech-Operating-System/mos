@@ -35,7 +35,7 @@ Header: {{Off, or On for a slim header on every page but the cover}}
 - **Font** and **Body size** set the body text. Headings, tables, the cover and the footer scale
   with the body size.
 - **Page size** is Letter or A4. Wide tables turn landscape either way.
-- **Date format** is used on the cover and in the revision history, and tools write dates in the
+- **Date format** is used on the cover and in the revision history, and skills write dates in the
   document body the same way.
 - **Document number** and **First revision** fill the cover, footer and revision history of every
   new draft. Leave them as bracketed placeholders until the company numbers the document.

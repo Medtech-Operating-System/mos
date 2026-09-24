@@ -34,7 +34,7 @@ consulting relationship with the material's origin, that needs clearing before i
 not after.
 
 **Anything specific to one company.** Nothing company-specific enters this repository. Ever. That
-is an architectural rule as well as a provenance one: a tool that carries one company's assumptions
+is an architectural rule as well as a provenance one: a skill that carries one company's assumptions
 is broken for every other company.
 
 **Material whose origin you cannot state.** "I wrote it" and "I adapted it from X, which is
@@ -69,12 +69,12 @@ sentence. An open project's defence against a provenance claim is its record —
 of what was studied and what was written independently is worth far more than an absence of one,
 because the absence cannot be checked.
 
-## Tools
+## Skills
 
-Every tool declares a named maintainer, and a tool that cannot state where its content came from
-fails review. See `tools/TOOL-FORMAT.md`.
+Every skill declares a named maintainer, and a skill that cannot state where its content came from
+fails review. See `skills/SKILL-FORMAT.md`.
 
-A tool seeded from a contributor's prior professional work carries an extra step: it is de-branded,
+A skill seeded from a contributor's prior professional work carries an extra step: it is de-branded,
 generalised past the originating company's specifics, and cleared with whoever holds the
 confidentiality obligation. The maintainer confirms that in the pull request or the submission.
 
@@ -82,7 +82,7 @@ confidentiality obligation. The maintainer confirms that in the pull request or 
 
 | What | Licence |
 |---|---|
-| Content — templates, guides, tool instructions, education | CC BY 4.0 |
+| Content — templates, guides, skill instructions, education | CC BY 4.0 |
 | Code and scripts | MIT |
 | The MOS name and logo | Trademark, held by the founder |
 

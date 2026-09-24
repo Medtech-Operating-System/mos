@@ -1,10 +1,10 @@
 # The MOS context standard
 
-*v0.2, 2026-09-23. The folder structure MOS tools read and write. This is the part of MOS that
-compounds: tools are replaceable, context is not.*
+*v0.2, 2026-09-23. The folder structure MOS skills read and write. This is the part of MOS that
+compounds: skills are replaceable, context is not.*
 
 Two things live on your machine. **Your context** — the files your company already has, wherever
-they already are. And **`mos/`** — the tools, downloaded, replaceable, holding nothing of yours.
+they already are. And **`mos/`** — the skills, downloaded, replaceable, holding nothing of yours.
 
 This document defines the first. It is deliberately small. A two-person company should be able to
 adopt it in an afternoon and still be using it at fifty people.
@@ -27,7 +27,7 @@ filled in as the work happens. That is the expected state, not a transitional on
 Acme Medical/                 <- your folder; sync it with anything, or nothing
 ├── mos/                      <- downloaded; replaceable; yours to delete
 ├── context/
-│   ├── context-map.md        <- what MOS can read. Read first by every tool
+│   ├── context-map.md        <- what MOS can read. Read first by every skill
 │   ├── inbox/                <- drop anything here; triaged later
 │   ├── templates/            <- document settings, and the template built from them
 │   ├── product/
@@ -50,7 +50,7 @@ lifecycle map — a document in `design/` is usually the work of more than one d
 
 | Domain | What belongs here |
 |---|---|
-| `product/` | What the device is. Device description, intended use, indications for use, claims, current stage. The first thing every other tool reads |
+| `product/` | What the device is. Device description, intended use, indications for use, claims, current stage. The first thing every other skill reads |
 | `users-and-needs/` | Who uses it and what they need. User needs, use environments, user profiles, use-related research |
 | `risk/` | The risk file. Hazard analysis, risk management plan and report, risk controls and their verification |
 | `design/` | Design inputs and outputs, design reviews, specifications, drawings, software architecture, verification and validation plans and reports |
@@ -65,12 +65,12 @@ state for a company at concept stage.
 ## The context map
 
 `context/context-map.md` is the file that makes MOS work on your machine. It says what exists and
-where. **It is also the access boundary: anything not in the map is invisible to MOS tools.**
+where. **It is also the access boundary: anything not in the map is invisible to MOS skills.**
 
 That is deliberate. A list of folders to avoid fails open — anything you forget to mark stays
 readable, and you never find out. A list of folders to read fails closed: forgetting something
-means a tool does not see it, which is visible and harmless. You write the map anyway to make
-tools work at all, so there is no second chore.
+means a skill does not see it, which is visible and harmless. You write the map anyway to make
+skills work at all, so there is no second chore.
 
 ### Format
 
@@ -103,11 +103,11 @@ Three kinds of line:
 
 - **A path** — a folder or a single file, with an optional note after an em dash. A folder includes
   everything under it.
-- **`exclude:`** — a pattern inside an otherwise-mapped path that tools skip.
+- **`exclude:`** — a pattern inside an otherwise-mapped path that skills skip.
 - **`restricted:`** — material that exists, is named, and is not to be read. The convention is that
   restricted holds the real thing while the mapped domain holds a de-identified summary or a
-  pointer, so a tool knows a study exists and what its endpoints were without opening a subject
-  record. This is what keeps minimization from making tools stupider.
+  pointer, so a skill knows a study exists and what its endpoints were without opening a subject
+  record. This is what keeps minimization from making skills stupider.
 
 Write `- not mapped yet` rather than deleting a domain heading. An empty heading is a question
 someone can answer later; a missing one is invisible.
@@ -125,7 +125,7 @@ Four categories stay out regardless of what the map says:
 ### The map grows as you use it
 
 You will not classify everything up front, and you should not try. People classify badly in the
-abstract and well in context. A tool needing something outside the map asks for that file, names
+abstract and well in context. A skill needing something outside the map asks for that file, names
 it, and says why. Your answer is written back into the map. After a few weeks the map reflects
 decisions you actually made rather than ones you anticipated.
 
@@ -148,17 +148,17 @@ MOS writes two kinds of file, in two formats:
 
 | Kind | Format | Why |
 |---|---|---|
-| **Working files** — the context map, the device profile, digests | Markdown | Tools read these far more than people do. Markdown diffs cleanly, reads the same in every AI, and a founder can edit the map by hand |
-| **Deliverables** — user needs, and every document a tool drafts for review | Word | Deliverables are reviewed, redlined and filed, and that happens in Word |
+| **Working files** — the context map, the device profile, digests | Markdown | Skills read these far more than people do. Markdown diffs cleanly, reads the same in every AI, and a founder can edit the map by hand |
+| **Deliverables** — user needs, and every document a skill drafts for review | Word | Deliverables are reviewed, redlined and filed, and that happens in Word |
 
 Deliverables are Word only, with no Markdown copy beside them. A copy goes stale at the first
-redline, and a tool that later reads the stale one cites a version nobody approved.
+redline, and a skill that later reads the stale one cites a version nobody approved.
 
 Word documents are written and read by one script, `mos/lib/mosdocx.py`, so every document has the
-same cover page, footer and styles whichever AI ran the tool. It needs Python 3.8 or later and nothing
-else; `setup` checks for it and asks before installing it. Tools try `python`, then `python3`,
-then `py -3`. To read a Word document, a tool runs `mosdocx.py read <file>`, which shows tracked
-changes as if accepted and says how many are outstanding. Where Python is not available, tools
+same cover page, footer and styles whichever AI ran the skill. It needs Python 3.8 or later and nothing
+else; `setup` checks for it and asks before installing it. Skills try `python`, then `python3`,
+then `py -3`. To read a Word document, a skill runs `mosdocx.py read <file>`, which shows tracked
+changes as if accepted and says how many are outstanding. Where Python is not available, skills
 write Markdown and say so.
 
 ### `templates/`
@@ -188,17 +188,17 @@ Like `inbox/`, `templates/` is always in scope and needs no line in the map.
 
 ### From draft to record
 
-A tool writes its draft to `outputs/<tool>/`, named `<document>_draft.docx`. It becomes a record
+A skill writes its draft to `outputs/<skill>/`, named `<document>_draft.docx`. It becomes a record
 when a person makes it one:
 
 1. Review and redline the draft in Word.
 2. Save the result as a new file with the revision in its name — `user-needs_revA.docx` — in the
    domain it belongs to, or in the quality system with the map pointing at it.
-3. From then on, that file is the document. Tools read it and build on it. The draft in
+3. From then on, that file is the document. Skills read it and build on it. The draft in
    `outputs/` has done its job and can be deleted.
 
-Saving the reviewed file into its domain is the step that turns a tool's output into context the
-next tool can use. A draft left in `outputs/` is invisible to every tool that reads the domain.
+Saving the reviewed file into its domain is the step that turns a skill's output into context the
+next skill can use. A draft left in `outputs/` is invisible to every skill that reads the domain.
 
 ### Revisions and `archive/`
 
@@ -207,7 +207,7 @@ Drafting against a superseded risk file is an error that survives into a submiss
 1. Put the revision in the filename: `risk-management-plan_revC.docx`.
 2. Superseded revisions go in an `archive/` subfolder. **`archive/` is excluded by default
    everywhere**, without needing a line in the map.
-3. Where a tool finds more than one revision of the same document outside `archive/`, it stops and
+3. Where a skill finds more than one revision of the same document outside `archive/`, it stops and
    says so rather than guessing.
 
 ### `inbox/`
@@ -216,14 +216,14 @@ Drafting against a superseded risk file is an error that survives into a submiss
 supplier email, a call summary — with no decision about where it goes. Capture is the step that
 fails, so its cost is set to zero.
 
-The trade is that something has to empty it. Until the context librarian tool ships, that is you:
+The trade is that something has to empty it. Until the context librarian skill ships, that is you:
 move files into the right domain when you think of it. **An inbox nothing triages is a graveyard**,
 which is why this is the only folder of its kind in the standard. There is no `notes/`, no `misc/`
 and no `general/`.
 
 ### Digests
 
-A digest is a short summary of one domain that a person wrote or reviewed, and that tools read
+A digest is a short summary of one domain that a person wrote or reviewed, and that skills read
 instead of the whole corpus. It lives at `context/<domain>/_digest.md` and records what it was
 built from:
 
@@ -241,7 +241,7 @@ Digests are optional and matter most once a domain is large. They are the main w
 volume of text crossing into a model bounded, and unlike a search index, **a person approved the
 contents before they crossed**.
 
-Digests go stale — that is what the `sources` block is for. Raw files never do: tools read what is
+Digests go stale — that is what the `sources` block is for. Raw files never do: skills read what is
 on disk at the moment they read it. There is no index to re-sync and no cache to invalidate.
 
 ## What not to add
@@ -276,20 +276,20 @@ which AI vendor's terms your company accepts, stay your company's decisions. MOS
 your data for you and does not filter it — a filter that is right most of the time is worse than
 none, because people trust it.
 
-Tools are plain Markdown, so they also run against a local model with nothing leaving the machine
+Skills are plain Markdown, so they also run against a local model with nothing leaving the machine
 at all. Output quality drops, and that path is documented rather than recommended.
 
 ## Status
 
 v0.2. The layout, the map format and the conventions above are settled enough to build against, and
-are expected to change once tools have run against real companies. v0.2 follows the first such run:
+are expected to change once skills have run against real companies. v0.2 follows the first such run:
 deliverables moved to Word, and `templates/` and the path from draft to record were added.
 
 Open, and worth arguing about:
 
 1. Are eight domains the right cut, or does `design/` want splitting?
-2. Should the map carry per-path dates, so tools can tell recent work from archaeology?
+2. Should the map carry per-path dates, so skills can tell recent work from archaeology?
 3. What is the minimum a two-person company adopts on day one without it feeling like bureaucracy —
    is it `product/` and the map, and nothing else?
-4. Should the device profile become a Word deliverable too? It is reviewed like one, but every tool
+4. Should the device profile become a Word deliverable too? It is reviewed like one, but every skill
    reads it, and it is kept in Markdown for now for that reason.

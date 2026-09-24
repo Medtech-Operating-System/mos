@@ -1,7 +1,7 @@
 # User needs — {{device}}
 
 Company: {{company}}
-Written: {{date}} · Source: MOS user-needs tool · Mode: {{interview / convert / gap-fill}}
+Written: {{date}} · Source: MOS user-needs skill · Mode: {{interview / convert / gap-fill}}
 
 *Notes: A draft. Nothing here is a controlled record, and no need here has been validated. Each
 need notes where it came from: an existing document, with its path, or this session's interview. A

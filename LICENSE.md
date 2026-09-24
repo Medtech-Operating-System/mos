@@ -4,7 +4,7 @@ MOS is dual-licensed, and which licence applies depends on what the file is.
 
 | What | Licence |
 |---|---|
-| Content — templates, guides, tool instructions, education | CC BY 4.0 |
+| Content — templates, guides, skill instructions, education | CC BY 4.0 |
 | Code and scripts | MIT |
 | The MOS name and logo | Trademark, held by the founder. Not licensed here |
 
@@ -28,4 +28,4 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ## No warranty, and what that means here
 
-MOS is not a quality system, a regulatory consultant or a substitute for one. Everything a tool produces is a pre-decisional draft, outside your quality system, and is not a controlled record until a qualified person at your company reviews, approves and imports it.
+MOS is not a quality system, a regulatory consultant or a substitute for one. Everything a skill produces is a pre-decisional draft, outside your quality system, and is not a controlled record until a qualified person at your company reviews, approves and imports it.

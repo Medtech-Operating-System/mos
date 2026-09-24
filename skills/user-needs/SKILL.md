@@ -25,7 +25,7 @@ template — a draft for review, not a controlled record.
 Read `mos/context-standard.md` before starting if you have not already, then read
 `context/context-map.md` to find out what you are allowed to read.
 
-## The thing this tool is actually for
+## The thing this skill is actually for
 
 **Compact beats comprehensive.** Every user need eventually requires validation through a clinical
 study or a human factors evaluation. More needs does not mean better coverage — it means more
@@ -36,14 +36,14 @@ overlapping needs. Delete decorative ones. A well-scoped device usually lands at
 A candidate that cannot survive *"what validation activity proves we met this?"* is not a user
 need. It is redundant, too vague, or a design input wearing a costume.
 
-## Rules for this tool
+## Rules for this skill
 
 - **Do not write into `context/`.** Drafts go to `outputs/user-needs/`. When the interview produces
   something that belongs in the company's context — a use environment nobody had written down, an
   agency comment about the population — offer to write it, name the file, and let the user decide.
 - **Do not invent needs to fill a gap.** An empty cell in the coverage matrix is either out of
   scope, which you say, or a real gap, which you flag. Padding a list to look thorough is the
-  failure mode this tool exists to prevent.
+  failure mode this skill exists to prevent.
 - **Do not renumber existing IDs.** Ever, for any reason. Retire an ID instead.
 - **Do not resolve contradictions silently.** If the risk file and the device description disagree
   about who uses the device, say so and ask. Picking one is not your call.
@@ -123,7 +123,7 @@ Check for `context/context-map.md`.
   many there are, which is worth telling the user — an unaccepted redline is not yet a decision.
   A reviewed user needs document, `user-needs_revB.docx` for example, is the current list and
   the starting point for Mode C.
-- **It does not exist** — say so, and say that running the `setup` tool first will make this tool
+- **It does not exist** — say so, and say that running the `setup` skill first will make this skill
   better. Then offer to continue anyway from the conversation alone. Do not refuse to work.
 
 Anything you need that sits outside the four declared paths, ask for by name and say why. Write the
@@ -151,7 +151,7 @@ Before drafting any need, capture and confirm in writing:
    risk management.
 
 **Draw these from context where context has them.** `context/product/device-profile.md`, if the
-`setup` tool has run, answers most of this. Say which answers came from documents and which came
+`setup` skill has run, answers most of this. Say which answers came from documents and which came
 from the conversation. Where the company does not know, write `Not known yet` — a plausible-sounding
 invented intended use is worse than a blank, because it looks like a decision someone made.
 
@@ -269,7 +269,7 @@ to `outputs/user-needs/user-needs.md` instead, and say that Word output needs th
 Then tell them how a draft becomes the record: review and redline it in Word, then save it as a
 new file with the revision in its name — `user-needs_revA.docx` — in `context/users-and-needs/`,
 or in their quality system with the context map pointing at it. From then on that Word file is
-the user needs. The next run of this tool reads it, and the draft in `outputs/` can be deleted.
+the user needs. The next run of this skill reads it, and the draft in `outputs/` can be deleted.
 
 Finally, tell them what to do about context: which answers from this session belong in
 `context/product/` or `context/users-and-needs/`, named file by file. Offer. Do not write.
@@ -290,7 +290,7 @@ Report as: `UN-ID | Issue | Suggested rewrite or action (keep / merge with UN-X 
 
 ## Working at three levels of context
 
-| What the company has | How this tool behaves |
+| What the company has | How this skill behaves |
 |---|---|
 | Nothing | Produces the template and runs the full interview, explaining why each column exists. The anchor in step 3 is built entirely from the conversation and is explicitly marked as such |
 | Some files | Reads the intended use and whatever user research exists, drafts from it, and interviews only for the gaps. Every need is marked as drawn from a document or from the conversation |
@@ -308,10 +308,10 @@ Report as: `UN-ID | Issue | Suggested rewrite or action (keep / merge with UN-X 
 
 ## Boundaries
 
-This tool does not generate design inputs, commit to a device architecture, frame bench-test
+This skill does not generate design inputs, commit to a device architecture, frame bench-test
 methods as needs, reduce patient needs to operator convenience, or inflate a list to look thorough.
 
-## Where this tool is weakest
+## Where this skill is weakest
 
 Recorded so it gets fixed rather than rediscovered:
 
@@ -320,5 +320,5 @@ Recorded so it gets fixed rather than rediscovered:
 - The 10–25 range is judgement dressed as a number. It is a useful prior, not a limit, and a
   genuinely complex combination product may exceed it for real reasons.
 - It has no way to check whether a need was already validated, or whether one contradicts a design
-  input written later. Traceability is a separate job and there is no tool for it yet.
+  input written later. Traceability is a separate job and there is no skill for it yet.
 - Mode C on a long list is slow and gets less careful toward the end. Review in batches.

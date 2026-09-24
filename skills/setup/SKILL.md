@@ -18,10 +18,10 @@ status: draft
 
 # Setup
 
-This is the first tool anyone runs. It produces the **context map**, which tells every other MOS
-tool where the company's work lives and what it may read; the **document settings** and the
+This is the first skill anyone runs. It produces the **context map**, which tells every other MOS
+skill where the company's work lives and what it may read; the **document settings** and the
 **document template** built from them, which give every Word document MOS writes the same format;
-and the **device profile**, which tells tools what the device is.
+and the **device profile**, which tells skills what the device is.
 
 Budget about twenty minutes. Most of it is the interview in step 8; the mapping in steps 2–5 goes
 fast because the user is confirming proposals rather than writing anything.
@@ -29,7 +29,7 @@ fast because the user is confirming proposals rather than writing anything.
 Read `mos/context-standard.md` before starting. It defines the eight domains, the map format and
 the conventions used throughout these steps.
 
-## Rules for this tool
+## Rules for this skill
 
 - **Do not read file contents while mapping.** Steps 2 and 3 use directory and file *names* only.
   Names are enough to propose a map, and reading a company's documents before they have told you
@@ -39,8 +39,8 @@ the conventions used throughout these steps.
 - **Do not invent answers.** Anything the user does not know is written as `Not known yet`. A
   guessed device class or a plausible-sounding intended use is worse than a blank, because it looks
   like a decision someone made.
-- **Confirm before every write**, showing the full content first. This tool writes into `context/`,
-  which no tool does without explicit approval.
+- **Confirm before every write**, showing the full content first. This skill writes into `context/`,
+  which no skill does without explicit approval.
 - **Install nothing without asking.** Step 7 may need Python. Say what it is for, name the
   command, and run it only on a yes.
 
@@ -102,7 +102,7 @@ restricted regardless of mapping:
 - Crown-jewel process or formulation detail
 
 Anything named here goes in the map as a `restricted:` line, with a short reason. Where a
-restricted area has a de-identified summary or a pointer document, map that instead so tools know
+restricted area has a de-identified summary or a pointer document, map that instead so skills know
 the material exists.
 
 Also scan the folder names you listed for anything that looks like it belongs in these categories —
@@ -113,7 +113,7 @@ Also scan the folder names you listed for anything that looks like it belongs in
 Fill `templates/context-map.md` with what steps 2–4 produced. Show the user the complete file.
 Confirm. Write it to `context/context-map.md`.
 
-Tell them plainly what the file means: anything listed is readable by MOS tools, anything not
+Tell them plainly what the file means: anything listed is readable by MOS skills, anything not
 listed is invisible to them, and they can edit it by hand at any time.
 
 ### 6. Scaffold what is missing
@@ -125,12 +125,12 @@ Do not create subfolders inside the domains. Do not create placeholder files.
 
 ### 7. Set up Word documents
 
-Every MOS tool delivers its work as a Word document, built from one company template by the script
+Every MOS skill delivers its work as a Word document, built from one company template by the script
 `mos/lib/mosdocx.py`, and reads the Word documents the company has reviewed. This step makes sure
 that works, and builds the template.
 
 **Check first.** Run `python mos/lib/mosdocx.py check`. If `python` is not found, try `python3`,
-then `py -3`. Whichever works is the command every later tool uses; say which.
+then `py -3`. Whichever works is the command every later skill uses; say which.
 
 **If none works**, explain what it is for in one sentence — MOS writes and reads Word documents
 through a short script, and the script needs Python — and ask whether to install it:
@@ -143,7 +143,7 @@ Run it only on a yes, then run the check again. Nothing else is installed: the s
 standard library and no packages.
 
 **If the user declines**, or you cannot run commands in this environment, say plainly what follows:
-tools will write their drafts as Markdown files instead of Word documents, and cannot read `.docx`
+skills will write their drafts as Markdown files instead of Word documents, and cannot read `.docx`
 files. Skip the template and continue with step 8. Running setup again later picks this step up.
 
 **Then the document format.** Every document MOS writes for this company — user needs today, a
@@ -220,7 +220,7 @@ Ask in batches, grouped by topic. Nine areas, and the user is allowed to not kno
    definition, design, verification and validation, submission, launch, or post-market. Ask what
    they are working on this month — it is a better question than asking them to pick a phase.
 5. **What already exists.** Which documents they have, even in draft: intended use, user needs,
-   risk file, design inputs, test reports, a submission. This tells later tools what to build on.
+   risk file, design inputs, test reports, a submission. This tells later skills what to build on.
 6. **Regulatory position.** Target geography. Expected class. Intended pathway if chosen — 510(k),
    De Novo, PMA, CE mark. A predicate or comparable device, if they have one in mind. Any agency
    contact so far.
@@ -230,7 +230,7 @@ Ask in batches, grouped by topic. Nine areas, and the user is allowed to not kno
 8. **Timeline and constraint.** The date that matters and what it is driven by — funding, a study,
    a partner, a competitor. What is most likely to slip.
 9. **Team.** Who does what, what is outsourced, and which disciplines nobody covers. This tells
-   later tools how much to explain.
+   later skills how much to explain.
 
 Do not ask all of these if the answers are already in front of you, and do not ask a question a
 company at concept stage cannot possibly answer. Skip ahead when the user says they do not know
@@ -257,8 +257,8 @@ Tell the user:
 - Anything you noticed and did not act on — several revisions of one document outside `archive/`,
   a domain that looks like it holds two kinds of work, a location they mentioned but never mapped
 
-Then say what to do next, based on their stage. Do not name a tool that has not shipped. Where the
-obvious next step has no tool yet, say that plainly — it is true, and it is how the roadmap gets
+Then say what to do next, based on their stage. Do not name a skill that has not shipped. Where the
+obvious next step has no skill yet, say that plainly — it is true, and it is how the roadmap gets
 built.
 
 Point at `context/inbox/` and explain it: anything useful that turns up — a call summary, a
@@ -268,8 +268,8 @@ fails.
 Finally, explain how MOS is updated, because it decides where their work must live:
 
 - **`mos/` is replaced whole, never patched.** A newer MOS comes as one download holding every
-  tool. To update, delete the `mos/` folder and unzip the new one in its place. There is no
-  per-tool download.
+  skill. To update, delete the `mos/` folder and unzip the new one in its place. There is no
+  per-skill download.
 - **Nothing of theirs is in `mos/`, so nothing of theirs is lost.** The context map, the device
   profile, the document settings and template, and every draft live in `context/` and `outputs/`,
   which an update never touches. That is why nothing in `mos/` should ever be edited: a change
@@ -279,19 +279,19 @@ Finally, explain how MOS is updated, because it decides where their work must li
   they have reviewed, which matters if MOS output feeds their quality system. Updating is a
   decision, not something that happens to them.
 - **When updating, also remove the entries in `.claude/skills/` that came with MOS** — one folder
-  per tool, named after the tool — before unzipping. Unzipping adds files but never deletes them,
-  so a tool that a later release retires would otherwise stay listed. Their own skills in the
+  per skill, named after the skill — before unzipping. Unzipping adds files but never deletes them,
+  so a skill that a later release retires would otherwise stay listed. Their own skills in the
   same folder are not touched.
 
 ## Working at three levels of context
 
-| What the company has | How this tool behaves |
+| What the company has | How this skill behaves |
 |---|---|
 | Nothing | Skips steps 2–4, scaffolds the layout, sets up Word output, and runs the full interview. Produces a map pointing only at the new `context/` folders, and a device profile built entirely from the conversation |
 | Some files | Maps what exists, and the interview starts from what those documents already say. Asks about gaps, not about everything |
 | A full document set | Most of the work is mapping. The interview becomes a confirmation pass, and step 10 is where the value is — naming what is missing, stale or duplicated across a set the company thought was complete |
 
-## Where this tool is weakest
+## Where this skill is weakest
 
 Recorded so it gets fixed rather than rediscovered:
 
@@ -299,9 +299,9 @@ Recorded so it gets fixed rather than rediscovered:
   the company's naming, and some companies name folders after people.
 - The interview cannot tell a confident wrong answer from a correct one. A founder who believes
   they are Class II when they are Class III will produce a device profile that says Class II, and
-  every downstream tool inherits it.
+  every downstream skill inherits it.
 - A company's own Word template works only if its fields survive editing. Word sometimes splits
   typed text like `{{revision}}` into pieces internally, and a split field is not found.
   `mosdocx.py inspect` reports the fields it cannot find, and the user re-types them.
 - There is no check yet that a mapped path still exists. A map written today survives a
-  reorganization six months from now only until someone runs a tool and it fails.
+  reorganization six months from now only until someone runs a skill and it fails.

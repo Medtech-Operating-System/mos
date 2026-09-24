@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""mosdocx — Word documents for MOS tools.
+"""mosdocx — Word documents for MOS skills.
 
-MOS tools draft in Markdown and deliver in Word. This script is the one place
+MOS skills draft in Markdown and deliver in Word. This script is the one place
 that conversion happens, so every document a company receives has the same
-cover page, footer and styles regardless of which AI ran the tool. It needs Python
+cover page, footer and styles regardless of which AI ran the skill. It needs Python
 3.8 or later and nothing else: no packages, no network.
 
 Commands:
@@ -38,11 +38,11 @@ Commands:
       starts a new page.
 
   read FILE.docx
-      Print a Word document as text, for a tool to read. Tracked changes are
+      Print a Word document as text, for a skill to read. Tracked changes are
       shown as if accepted, and counted at the top so the reader knows.
 
 Document settings are a short Markdown file of "Key: value" lines, written by
-the setup tool. Every document is built from them, which is what keeps a
+the setup skill. Every document is built from them, which is what keeps a
 company's documents alike. Keys, with their defaults:
 
   Company:          (required)
@@ -857,7 +857,7 @@ def _write(path, data, force):
 def main(argv=None):
     if hasattr(sys.stdout, 'reconfigure'):
         sys.stdout.reconfigure(encoding='utf-8')
-    p = argparse.ArgumentParser(prog='mosdocx', description='Word documents for MOS tools.')
+    p = argparse.ArgumentParser(prog='mosdocx', description='Word documents for MOS skills.')
     sub = p.add_subparsers(dest='cmd', required=True)
     sub.add_parser('check')
     t = sub.add_parser('template')
@@ -888,7 +888,7 @@ def main(argv=None):
                   % ((VERSION,) + sys.version_info[:2]))
         elif a.cmd == 'template':
             if not os.path.exists(a.settings):
-                raise MosDocxError('no document settings at %s. The setup tool writes them.' % a.settings)
+                raise MosDocxError('no document settings at %s. The setup skill writes them.' % a.settings)
             settings = load_settings(a.settings)
             if not settings['company']:
                 raise MosDocxError('the document settings have no Company.')

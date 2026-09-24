@@ -75,7 +75,7 @@ import zipfile
 import xml.etree.ElementTree as ET
 from xml.sax.saxutils import escape
 
-VERSION = '0.1.0'  # a shared contract: a change in behaviour is a new MOS release
+VERSION = '0.2.0'  # a shared contract: a change in behaviour is a new MOS release
 
 DEFAULT_TEMPLATE = os.path.join('context', 'templates', 'document-template.docx')
 DEFAULT_SETTINGS = os.path.join('context', 'templates', 'document-settings.md')

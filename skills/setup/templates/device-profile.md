@@ -35,13 +35,38 @@ Lay users involved: {{yes / no}}
 
 ## What it is for
 
-Intended use: {{one sentence}}
+Intended use — what the device does: {{one sentence}}
 
-Indications for use: {{statement, or Not written yet}}
+Indications for use — the condition, the patients and the body site: {{statement word for word, or Not written yet}}
+
+Condition it diagnoses, treats, prevents or monitors: {{condition, or General tool, no specific condition}}
+
+Patients: {{age, sex, severity, setting — or Not known yet}}
+
+Part of the body: {{site, or Not known yet}}
+
+Who should not use it — contraindications, kept out of the indications: {{situations, or Not known yet}}
 
 The clinical problem: {{problem}}
 
 Current standard of care: {{what people do today instead}}
+
+*Source: {{interview / path}}*
+
+## Commercial intent
+
+What the company believes it needs in order to sell, in its own words. Unchecked against
+regulatory or clinical evidence.
+
+Who pays, and who decides to buy: {{buyer, or Not known yet}}
+
+Why they would choose it — the value proposition: {{one or two sentences, or Not known yet}}
+
+Claims it must be able to make: {{list in the founder's words, or Not known yet}}
+
+Claims that would be nice to have: {{list, or None}}
+
+Competitors named: {{names, or Not known yet}}
 
 *Source: {{interview / path}}*
 
@@ -68,15 +93,17 @@ Working on right now: {{what the team is actually doing this month}}
 ## Regulatory position
 
 Target geography: {{US / EU / other}}
-Expected class: {{class, or Not known yet}}
-Intended pathway: {{510(k) / De Novo / PMA / CE mark / Not chosen yet}}
-Predicate or comparable device: {{device, or none identified}}
+Expected class — how risky FDA is expected to consider it: {{I / II / III, or Not known yet}}
+Intended pathway — how it gets to market: {{510(k) / De Novo / PMA / CE mark / Not chosen yet}}
+Predicate or comparable device — a marketed device it would be compared to: {{device, or none identified}}
 Agency contact so far: {{none / pre-submission / meeting held — with dates}}
 
 *Source: {{interview / path}}*
 
 ## Risk profile
 
+Invasiveness — how far into the body: {{surface / natural opening / surgical / none}}
+Software documentation level — could a software failure seriously injure someone: {{Basic / Enhanced / No software / Not known yet}}
 Novel aspects with no clear standard to point at: {{what, or none}}
 Applicable standards already identified: {{list, or Not known yet}}
 Known hazards the team is already worried about: {{list}}

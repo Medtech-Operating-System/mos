@@ -1,7 +1,7 @@
 ---
 name: user-needs
 description: Draft user needs for a medical device from a company's existing context, interviewing for what is missing. Use when a team needs user needs captured, converted from notes, or reviewed for gaps.
-version: 0.2.0
+version: 0.3.0
 maintainer: Eric Sugalski
 phase: [01-definition]
 discipline: [clinical, technical]
@@ -12,14 +12,14 @@ reads:
   - context/risk/**
   - context/templates/**
 writes:
-  - outputs/user-needs/
+  - outputs/users-and-needs/
 status: draft
 ---
 
 # User needs
 
 Produces a compact set of user needs for a medical device, written so that each one can be
-validated. The output is a Word document in `outputs/user-needs/`, built from the company's
+validated. The output is a Word document in `outputs/users-and-needs/`, built from the company's
 template — a draft for review, not a controlled record.
 
 Read `mos/context-standard.md` before starting if you have not already, then read
@@ -38,7 +38,7 @@ need. It is redundant, too vague, or a design input wearing a costume.
 
 ## Rules for this skill
 
-- **Do not write into `context/`.** Drafts go to `outputs/user-needs/`. When the interview produces
+- **Do not write into `context/`.** Drafts go to `outputs/users-and-needs/`. When the interview produces
   something that belongs in the company's context — a use environment nobody had written down, an
   agency comment about the population — offer to write it, name the file, and let the user decide.
 - **Do not invent needs to fill a gap.** An empty cell in the coverage matrix is either out of
@@ -47,6 +47,12 @@ need. It is redundant, too vague, or a design input wearing a costume.
 - **Do not renumber existing IDs.** Ever, for any reason. Retire an ID instead.
 - **Do not resolve contradictions silently.** If the risk file and the device description disagree
   about who uses the device, say so and ask. Picking one is not your call.
+- **Test the intended use before building on it.** An intended use from the device profile or a
+  company document is the anchor for every need, so read it critically first. Where it is too
+  vague to validate against, names a user group the rest of the context does not support, or
+  leaves out a use the interview reveals, say so, show why, and ask the user to reconsider. Once
+  they confirm it, build on it as written, and note in the draft that it was confirmed over the
+  challenge.
 - **Do not reproduce text from ISO, IEC or AAMI standards.** Clause numbers are fine. Clause text
   is not, however much paraphrase surrounds it.
 
@@ -123,6 +129,11 @@ Check for `context/context-map.md`.
   many there are, which is worth telling the user — an unaccepted redline is not yet a decision.
   A reviewed user needs document, `user-needs_revB.docx` for example, is the current list and
   the starting point for Mode C.
+  - Read the drafts in `outputs/product/`, `outputs/users-and-needs/` and `outputs/risk/` too.
+    An earlier user needs draft that nobody promoted is still the best starting point there is;
+    say it is unreviewed, and where it disagrees with a reviewed document, the reviewed document
+    wins and you ask. A draft older than the reviewed revision it would replace is superseded;
+    ignore it.
 - **It does not exist** — say so, and say that running the `setup` skill first will make this skill
   better. Then offer to continue anyway from the conversation alone. Do not refuse to work.
 
@@ -250,10 +261,10 @@ Fill `templates/user-needs.md`. Write dates in the Date format from
 `context/templates/document-settings.md`, if it exists. Show the user the complete content. Confirm.
 
 Then deliver it as a Word document. Save the filled template to
-`outputs/user-needs/user-needs.source.md` and run:
+`outputs/users-and-needs/user-needs.source.md` and run:
 
 ```
-python mos/lib/mosdocx.py render --in outputs/user-needs/user-needs.source.md --out outputs/user-needs/user-needs_draft.docx --title "User Needs — <device>" --remove-input
+python mos/lib/mosdocx.py render --in outputs/users-and-needs/user-needs.source.md --out outputs/users-and-needs/user-needs_draft.docx --title "User Needs — <device>" --remove-input
 ```
 
 `--remove-input` deletes the Markdown once the Word document exists. The Word document is the
@@ -264,12 +275,14 @@ If `user-needs_draft.docx` already exists, the script refuses to overwrite it. S
 and ask; add `--force` only on a yes.
 
 If the script cannot run — no Python, or no way to run commands here — write the filled template
-to `outputs/user-needs/user-needs.md` instead, and say that Word output needs the step in `setup`.
+to `outputs/users-and-needs/user-needs.md` instead, and say that Word output needs the step in `setup`.
 
 Then tell them how a draft becomes the record: review and redline it in Word, then save it as a
 new file with the revision in its name — `user-needs_revA.docx` — in `context/users-and-needs/`,
 or in their quality system with the context map pointing at it. From then on that Word file is
-the user needs. The next run of this skill reads it, and the draft in `outputs/` can be deleted.
+the user needs. Then delete the draft from `outputs/users-and-needs/`: a promotion moves the
+document, so it never exists in two places. Until it is promoted, the next run of this skill, and
+every other skill that reads the domain, still reads the draft, as an unreviewed draft.
 
 Finally, tell them what to do about context: which answers from this session belong in
 `context/product/` or `context/users-and-needs/`, named file by file. Offer. Do not write.

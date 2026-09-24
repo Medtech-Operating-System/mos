@@ -1,12 +1,13 @@
 # The MOS skill format
 
-*v0.2, 2026-09-23. The contract every MOS skill is written to. Changes to this file are
+*v0.5, 2026-09-24. The contract every MOS skill is written to. Changes to this file are
 architecture decisions and go through the decision log.*
 
 A MOS skill is a folder of plain Markdown that an AI reads and follows. It is not a program. A
 person could run one by hand with the templates and enough patience; the AI is there to do the
-reading and the drafting. The one thing shared across skills is `lib/mosdocx.py`, which writes and
-reads Word documents; it needs Python, and `setup` asks before installing it.
+reading and the drafting. What skills share lives in `lib/`: `mosdocx.py`, which writes and reads
+Word documents, and the scripts and reference data more than one skill needs. They need Python, and
+`setup` asks before installing it.
 
 ## One job per skill
 
@@ -32,9 +33,19 @@ Scripts belong to the skill that uses them and run when that skill runs. Use one
 mechanical and an AI would get it wrong by improvising — comparing timestamps, checking a folder
 against a list, counting. Do not use one for anything requiring judgment.
 
-The exception is `lib/mosdocx.py`, shared by every skill because every skill delivers a Word
-document and they must all look the same. A skill does not carry its own copy. A second shared
-script needs a decision-log entry saying why it cannot belong to one skill.
+The exception is `lib/`, for what more than one skill needs. A skill does not carry its own copy
+of anything there.
+
+| Shared | What it is for | Used by |
+|---|---|---|
+| `lib/mosdocx.py` | Writes and reads every Word document, so they all look the same | Every skill |
+| `lib/openfda.py` | Every call to FDA's databases and the eCFR | The regulatory and commercial skills |
+| `lib/studies.py` | Every sample size, timeline and budget calculation, and every ClinicalTrials.gov query | `indications-strategy` |
+| `lib/cms.py` | Every Medicare coverage policy search and every public billing-code lookup | `reimbursement` |
+| `lib/reference/` | Data files with their sources, such as `clinical-cost-bands.md` | The skills that name them |
+
+Each new shared script or reference file needs a decision-log entry saying why it cannot belong to
+one skill. A change to one is checked against every skill that uses it.
 
 ## SKILL.md
 
@@ -53,7 +64,7 @@ reads:
   - context/product/**
   - context/users-and-needs/**
 writes:
-  - outputs/user-needs/
+  - outputs/users-and-needs/
 status: draft
 ---
 ```
@@ -67,7 +78,7 @@ status: draft
 | `phase` | Where it sits on the lifecycle map, by phase id. More than one is allowed |
 | `discipline` | One or more of: technical, clinical, regulatory, quality, commercial, manufacturing |
 | `reads` | Directories with patterns. See below |
-| `writes` | Where output goes. Almost always a folder under `outputs/` |
+| `writes` | Where output goes. The domain folder under `outputs/` its drafts belong to, such as `outputs/regulatory/` |
 | `status` | `draft`, `testing` or `released`. Nothing reaches `released` without three testers |
 
 ### Declaring reads and writes
@@ -83,6 +94,11 @@ context folder in case something is relevant fails review — that is a standard
 **Prefer digests.** Where a domain has a digest, read it instead of the full corpus, and pull raw
 files only when the job genuinely needs them. A digest is a short summary a person reviewed and
 approved, which is what makes it the right thing to send to a model.
+
+**A context domain includes its drafts.** Declaring `context/regulatory/**` also lets the skill read
+`outputs/regulatory/**`, the unreviewed drafts in that domain. No second line is needed. The skill
+weighs them below the domain's own documents, in the order the context standard sets, and cites any
+draft it relies on as an unreviewed draft.
 
 **Anything outside the declaration requires asking**, naming the file and why. The user's answer is
 written back to the context map, so the same question is not asked twice.
@@ -109,9 +125,26 @@ the population, that belongs in `context/regulatory/` — not evaporating with t
 Offer to write it, name the file, and let the user decide. Skills never write into `context/`
 without the user approving that specific write. Drafts go to `outputs/`, and a human promotes them.
 
+A draft informs later skills whether or not anyone promotes it. So a skill starts by reading the
+drafts in its declared domains as well as the records, and says which it is relying on: a reviewed
+record, or an unreviewed draft. Where they disagree, it asks.
+
+## Skills test what users bring
+
+When a user brings a decision — a product code, a predicate, a class, a pathway, an intended use —
+or a document that records one, the skill reads it and does its own analysis before relying on
+it. Where the analysis disagrees, the skill says so plainly, shows the evidence, and asks the user
+to reconsider.
+
+It does not adopt the user's answer only because the user gave it, and it does not overrule the
+user either: the decision is theirs, and their reasons may be ones the skill cannot see. Once the
+user has heard the challenge and confirmed their direction, the skill accepts it, records in its
+output that the direction was confirmed over a challenge, and builds on it.
+
 ## Outputs are drafts
 
-Everything a skill produces lands in `outputs/` as a pre-decisional draft. It is outside the quality
+Everything a skill produces lands in `outputs/<domain>/` — the same eight domains as `context/` —
+as a pre-decisional draft. It is outside the quality
 system and is not a controlled record until a qualified person reviews, approves and imports it.
 The AI is a tool; the human is the author.
 
@@ -119,7 +152,10 @@ A skill's `templates/` hold Markdown: the structure the AI fills. The deliverabl
 built from that filled template by `lib/mosdocx.py render`, on the company's document template,
 named `<document>_draft.docx`. No Markdown copy is kept beside it. Where Python is not available,
 the skill writes the Markdown instead and says so. The context standard covers how a draft becomes a
-record.
+record, and a record moves out of `outputs/` rather than being copied.
+
+A skill writes a separate Markdown record into `context/` only to record a decision that no
+document holds — a code a person chose, not a restatement of the analysis that compared codes.
 
 Every output carries the disclaimer:
 
@@ -178,6 +214,8 @@ A skill is sent back if it:
 - enumerates filenames instead of directories with patterns
 - does nothing useful with no context
 - writes into `context/` without the user approving that write
+- accepts a decision the user brings without assessing it independently, or overrules one the
+  user has confirmed
 - reproduces text from ISO, IEC, AAMI or any other copyrighted standard — clause numbers are fine,
   clause text is not
 - contains anything specific to one company

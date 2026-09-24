@@ -1,6 +1,6 @@
 # The MOS context standard
 
-*v0.2, 2026-09-23. The folder structure MOS skills read and write. This is the part of MOS that
+*v0.3, 2026-09-24. The folder structure MOS skills read and write. This is the part of MOS that
 compounds: skills are replaceable, context is not.*
 
 Two things live on your machine. **Your context** — the files your company already has, wherever
@@ -38,8 +38,21 @@ Acme Medical/                 <- your folder; sync it with anything, or nothing
 │   ├── clinical/
 │   ├── regulatory/
 │   └── commercial/
-└── outputs/                  <- drafts, before review. Not records
+└── outputs/                  <- MOS drafts, before review. Not records
+    ├── users-and-needs/      <- the same eight domains as context/,
+    ├── regulatory/              created as skills write to them
+    └── commercial/
 ```
+
+**Two stages, one organization.** `context/` holds what your company stands behind; `outputs/`
+holds what MOS drafted and nobody has reviewed yet. Both are organized by the same eight domains,
+so a draft's place is obvious before it is written, and so is where it goes once reviewed.
+
+**Skills read both.** Everything MOS has drafted informs the skills that run after it, reviewed or
+not. What changes with review is how far a skill trusts a document, not whether it can see it: see
+*Which source wins* below. Drafts are kept out of `context/` for one reason: for many companies,
+the folders `context/` points at are their own controlled filing, and an unreviewed AI draft does
+not belong there.
 
 ### The eight domains
 
@@ -188,17 +201,36 @@ Like `inbox/`, `templates/` is always in scope and needs no line in the map.
 
 ### From draft to record
 
-A skill writes its draft to `outputs/<skill>/`, named `<document>_draft.docx`. It becomes a record
+A skill writes its draft to `outputs/<domain>/`, named `<document>_draft.docx`. It becomes a record
 when a person makes it one:
 
 1. Review and redline the draft in Word.
 2. Save the result as a new file with the revision in its name — `user-needs_revA.docx` — in the
    domain it belongs to, or in the quality system with the map pointing at it.
-3. From then on, that file is the document. Skills read it and build on it. The draft in
-   `outputs/` has done its job and can be deleted.
+3. Delete the draft from `outputs/`. **A promotion moves the document; it does not copy it.** From
+   then on the reviewed file is the document, and one document never exists in two places.
 
-Saving the reviewed file into its domain is the step that turns a skill's output into context the
-next skill can use. A draft left in `outputs/` is invisible to every skill that reads the domain.
+A draft that is never promoted still counts: later skills read it, and say that they are relying
+on an unreviewed draft. Promoting it makes it something they can rely on without saying so.
+
+**A separate record only records a decision.** Most of what a skill produces lives in its
+document. Where a person makes a decision the document does not hold — the analysis compares
+product codes, and a person chooses one — a skill writes a short Markdown record of that decision
+to the domain, with the user's approval. It never writes a record that restates a document.
+
+### Which source wins
+
+Skills weigh what they read in this order, highest first:
+
+1. **Reviewed records in `context/`** — revisions a person saved into a domain, and decision
+   records.
+2. **The company's other documents in `context/`** — its own files, reviewed or not.
+3. **MOS drafts in `outputs/`** — always cited as coming from an unreviewed draft.
+4. **The conversation** — someone's recollection, not yet written down.
+
+A lower source never overrides a higher one. Where they disagree, the skill says so and asks; it
+does not pick one silently. Within a level, the newer revision wins, and a draft older than the
+record it would revise is ignored as superseded.
 
 ### Revisions and `archive/`
 
@@ -283,7 +315,9 @@ at all. Output quality drops, and that path is documented rather than recommende
 
 v0.2. The layout, the map format and the conventions above are settled enough to build against, and
 are expected to change once skills have run against real companies. v0.2 follows the first such run:
-deliverables moved to Word, and `templates/` and the path from draft to record were added.
+deliverables moved to Word, and `templates/` and the path from draft to record were added. v0.3
+makes drafts readable by every skill, organizes `outputs/` by the eight domains, and sets the order
+in which sources are trusted.
 
 Open, and worth arguing about:
 

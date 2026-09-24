@@ -1,7 +1,7 @@
 ---
 name: setup
 description: Map a company's existing files and interview them about their device, producing a context map and a populated context folder. Use this the first time someone runs MOS, or when their context map needs rebuilding.
-version: 0.3.0
+version: 0.4.0
 maintainer: Eric Sugalski
 phase: [all]
 discipline: [all]
@@ -39,6 +39,13 @@ the conventions used throughout these steps.
 - **Do not invent answers.** Anything the user does not know is written as `Not known yet`. A
   guessed device class or a plausible-sounding intended use is worse than a blank, because it looks
   like a decision someone made.
+- **Record beliefs as beliefs, and flag what does not hold together.** An expected class, an
+  intended pathway or a predicate the user names goes in the profile as the company's
+  expectation, not yet checked. `setup` does not search FDA's records, so it does not rule on
+  them. But where answers contradict each other or the device — an implanted, life-sustaining
+  device expected to be Class I; a 510(k) planned for a device the user says has nothing like it
+  on the market — say so, explain why in plain words, and ask. Record what the user confirms.
+  Name `product-code` as the skill that checks a classification against FDA's records.
 - **Confirm before every write**, showing the full content first. This skill writes into `context/`,
   which no skill does without explicit approval.
 - **Install nothing without asking.** Step 7 may need Python. Say what it is for, name the
@@ -208,28 +215,85 @@ use statement, a device description or a pitch deck in a mapped location, read i
 what is missing rather than about everything. Say which answers you drew from existing documents,
 and where they came from.
 
-Ask in batches, grouped by topic. Nine areas, and the user is allowed to not know:
+Ask in batches, grouped by topic. Ten areas, and the user is allowed to not know:
 
 1. **The device.** What it is physically or technically. What it does. Hardware, software,
    consumable, or a combination. Sterile, implanted, energy-delivering, patient-contacting.
 2. **Users and setting.** Who operates it, who it is used on, and where — hospital, clinic, home,
    ambulance, laboratory. Whether a lay user ever touches it.
-3. **What it is for.** The intended use in one sentence. Indications for use if they exist.
-   The clinical problem, and what people do today instead.
-4. **Stage.** Where the project actually is, mapped to a phase on the lifecycle map: concept,
+3. **What it is for.** Ask in plain words and name the regulatory term beside them. Founders
+   often have the answer without knowing the term, and regulatory people need the term to find it.
+   - *What does the device do, in one sentence?* FDA calls this the **intended use**: the general
+     purpose of the device.
+   - *Which medical condition does it diagnose, treat, prevent or monitor, in which patients, and
+     where on or in the body?* FDA calls this the **indications for use**. Ask for each part
+     separately: the condition, the patients (age, sex, severity, setting), and the part of the
+     body. If a written statement exists, ask for it word for word.
+   - *Or is it a general tool used across many conditions, like a scalpel?* Then it has no
+     specific indication, and its intended use and indications are the same. Record that instead
+     of pressing for a condition that does not exist.
+   - *Is there anyone, or any situation, where it should not be used?* FDA calls these
+     **contraindications**: situations where the risk clearly outweighs any benefit. Record them
+     on their own line, not inside the indications. The labeling lists contraindications in
+     their own section, separate from the indications.
+
+   Say why this matters: the indications are central to which regulatory path a device takes.
+   A new condition, patient group or body site can turn a planned 510(k) into a
+   De Novo or a PMA. A company that has not written them yet is normal at concept stage. Write
+   `Not written yet` and move on.
+
+   Then ask about the clinical problem, and what people do today instead.
+4. **Commercial intent.** A light pass: what the company needs the device to say in order to
+   sell. Working out how the device wins against competitors is a separate job; here, capture
+   what the founder already believes. Plain question first, the term beside it.
+   - *Who pays for it, and who decides to buy it?* Often not the person who uses it: a
+     hospital's purchasing committee, a practice owner, the patient, an insurer.
+   - *Why would they choose it over what they use today?* The **value proposition**, in a
+     sentence or two.
+   - *What do you need to be able to say about it, in your marketing, for it to sell?* These are
+     **claims**. Ask which are must-haves, without which the device does not sell, and which are
+     nice to have. Record them in the founder's words; do not rewrite them into regulatory
+     language.
+   - *Who else sells something that does this job?* Names are enough.
+
+   Say why this is asked now: a claim the company needs can require different indications, a
+   harder regulatory pathway or clinical evidence, and the regulatory skills need to know about
+   it before they draft anything. "Not sure yet" is a normal answer at concept stage.
+5. **Stage.** Where the project actually is, mapped to a phase on the lifecycle map: concept,
    definition, design, verification and validation, submission, launch, or post-market. Ask what
    they are working on this month — it is a better question than asking them to pick a phase.
-5. **What already exists.** Which documents they have, even in draft: intended use, user needs,
+6. **What already exists.** Which documents they have, even in draft: intended use, user needs,
    risk file, design inputs, test reports, a submission. This tells later skills what to build on.
-6. **Regulatory position.** Target geography. Expected class. Intended pathway if chosen — 510(k),
-   De Novo, PMA, CE mark. A predicate or comparable device, if they have one in mind. Any agency
-   contact so far.
-7. **Risk profile.** Invasiveness, software level of concern, sterility, biocompatibility,
-   electrical or radiation safety, and whether any part is novel enough that there is no standard
-   to point at.
-8. **Timeline and constraint.** The date that matters and what it is driven by — funding, a study,
+7. **Regulatory position.** Plain question first, the term beside it. Most founders do not know
+   these answers yet, and `Not known yet` is the right answer when that is true.
+   - *Where do you plan to sell it first?* The **target geography**: US, EU, or elsewhere.
+   - *How risky do you expect FDA to consider it?* FDA sorts devices into **Class I, II or III**,
+     from lowest risk to highest.
+   - *How do you plan to get it to market?* The **regulatory pathway**, if one is chosen: a
+     **510(k)**, showing the device is as safe and effective as one already on the market; a
+     **De Novo**, for a new low- or moderate-risk device with nothing like it on the market; a
+     **PMA** (premarket approval), for high-risk devices, usually with clinical data; or a
+     **CE mark** for Europe.
+   - *Is there a device already on the market that does the same job, that you would compare
+     yours to?* For a 510(k), FDA calls this the **predicate device**.
+   - *Have you talked to FDA yet?* Formal contact is usually a **Pre-Submission**, a written
+     request for FDA's feedback before filing. Note any meeting and its date.
+8. **Risk profile.** Plain question first, the term beside it.
+   - *Does it go into the body, and how far: on the skin, into a natural opening, or through
+     surgery?* This is **invasiveness**.
+   - *Does it contain software, and could a software failure seriously injure someone?* FDA sets
+     a **documentation level** for device software, **Basic** or **Enhanced**, largely on that
+     question. It replaced the older "level of concern" in 2023; if the user uses the old term,
+     record their answer and note the change.
+   - *Is it sold sterile, or sterilized before use?* **Sterility**.
+   - *What touches the patient — skin, tissue, blood — and for how long?* This decides
+     **biocompatibility** testing.
+   - *Does it run on electricity, or give off radiation, heat, light or sound?* **Electrical and
+     radiation safety**.
+   - *Is any part of it new enough that no existing test standard covers it?*
+9. **Timeline and constraint.** The date that matters and what it is driven by — funding, a study,
    a partner, a competitor. What is most likely to slip.
-9. **Team.** Who does what, what is outsourced, and which disciplines nobody covers. This tells
+10. **Team.** Who does what, what is outsourced, and which disciplines nobody covers. This tells
    later skills how much to explain.
 
 Do not ask all of these if the answers are already in front of you, and do not ask a question a

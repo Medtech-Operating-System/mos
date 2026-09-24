@@ -551,15 +551,50 @@ def split_row(line):
     return [c.strip() for c in re.split(r'(?<!\\)\|', line)]
 
 
+def column_shares(rows, ncols):
+    """Each column's share of the table width, in fiftieths of a percent (5000 = all of it).
+
+    Word's autofit hands a long unbreakable string, such as a URL, the whole table and
+    crushes its neighbours until even their headers break mid-word. Instead, every column
+    gets room for its longest word, up to a cap, and the rest of the width goes where the
+    text is."""
+    char = 90                          # twips per character of 9 pt table text, roughly
+    pad = 230                          # cell margins
+    words, text = [0] * ncols, [0] * ncols
+    for row in rows:
+        for c, cell in enumerate(row[:ncols]):
+            plain = re.sub(r'[*`]', '', cell)
+            words[c] = max([words[c]] + [min(len(w), 16) for w in plain.split()])
+            text[c] = max(text[c], min(len(plain), 90))
+    # Every column needs room for its longest word. Beyond that, a short column (a count, a
+    # code, a class) wants its entries on one line, and a prose column wants most of the
+    # spare width, so that its rows stay short.
+    need = [w * char + pad for w in words]
+    want = [max(n, t * char + pad if t <= 24 else t * char / 1.5 + pad)
+            for n, t in zip(need, text)]
+    room = PAGE_H - 2 * MARGIN if ncols >= WIDE_TABLE else TEXT_W  # wide tables go landscape
+    if sum(need) >= room:
+        widths = [room * n / sum(need) for n in need]
+    else:
+        spare = room - sum(need)
+        extra = [w - n for w, n in zip(want, need)]
+        widths = [n + (spare * e / sum(extra) if sum(extra) else spare / ncols)
+                  for n, e in zip(need, extra)]
+    shares = [int(5000 * w / sum(widths)) for w in widths]
+    shares[-1] += 5000 - sum(shares)
+    return shares
+
+
 def table_xml(rows):
     ncols = max(len(r) for r in rows)
-    grid = ''.join('<w:gridCol w:w="%d"/>' % (TEXT_W // ncols) for _ in range(ncols))
+    shares = column_shares(rows, ncols)
+    grid = ''.join('<w:gridCol w:w="%d"/>' % (TEXT_W * s // 5000) for s in shares)
     out = []
     for i, row in enumerate(rows):
         row = row + [''] * (ncols - len(row))
         cells = []
-        for cell in row:
-            props = '<w:tcW w:w="0" w:type="auto"/>'
+        for cell, share in zip(row, shares):
+            props = '<w:tcW w:w="%d" w:type="pct"/>' % share
             if i == 0:
                 props += '<w:shd w:val="clear" w:color="auto" w:fill="E7E6E6"/>'
             cells.append('<w:tc><w:tcPr>%s</w:tcPr>%s</w:tc>' % (
@@ -567,7 +602,7 @@ def table_xml(rows):
         trpr = '<w:trPr><w:cantSplit/>%s</w:trPr>' % ('<w:tblHeader/>' if i == 0 else '')
         out.append('<w:tr>%s%s</w:tr>' % (trpr, ''.join(cells)))
     return ('<w:tbl><w:tblPr><w:tblStyle w:val="MOSTable"/><w:tblW w:w="5000" w:type="pct"/>'
-            '<w:tblLayout w:type="autofit"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" '
+            '<w:tblLayout w:type="fixed"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" '
             'w:firstColumn="0" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr>'
             '<w:tblGrid>%s</w:tblGrid>%s</w:tbl>' % (grid, ''.join(out)))
 

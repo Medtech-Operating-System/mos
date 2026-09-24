@@ -308,12 +308,30 @@ which AI vendor's terms your company accepts, stay your company's decisions. MOS
 your data for you and does not filter it — a filter that is right most of the time is worse than
 none, because people trust it.
 
-Skills are plain Markdown, so they also run against a local model with nothing leaving the machine
-at all. Output quality drops, and that path is documented rather than recommended.
+**Public records a skill searches.** Some skills search government databases. Those requests go
+from your machine straight to the agency, not through MOS, and carry only generic terms: device
+types, product codes, regulation numbers, conditions, competitor names. Never your product's name,
+its indications, its claims, its description or any file's contents. Every request is shown to you
+before it runs, and every one is logged in the document it produces.
+
+| Service | Run by | Used by | What is sent |
+|---|---|---|---|
+| openFDA, FDA's device databases, fda.gov | FDA | `product-code`, `precedent-search`, `differentiation`, `indications-strategy` | Generic device words, product codes, regulation and submission numbers, competitor names |
+| eCFR | Office of the Federal Register | `product-code`, `precedent-search` | Regulation numbers |
+| ClinicalTrials.gov | National Library of Medicine | `indications-strategy` | Conditions, generic device words, competitor names |
+| Clinical Tables | National Library of Medicine | `reimbursement` | Generic procedure, device and condition words |
+| Medicare Coverage Database, cms.gov | CMS | `reimbursement` | No search terms. The skill downloads Medicare's complete policy lists and searches them on your machine, then reads national policies by number |
+
+`differentiation` also offers an optional web search for what competitors publish. It runs through
+your AI tool's own web search, under that provider's terms, and only if you say yes.
+
+Skills are plain Markdown, so they also run against a local model, with nothing leaving the machine
+but the public-record searches above. Output quality drops, and that path is documented rather than
+recommended.
 
 ## Status
 
-v0.2. The layout, the map format and the conventions above are settled enough to build against, and
+v0.3. The layout, the map format and the conventions above are settled enough to build against, and
 are expected to change once skills have run against real companies. v0.2 follows the first such run:
 deliverables moved to Word, and `templates/` and the path from draft to record were added. v0.3
 makes drafts readable by every skill, organizes `outputs/` by the eight domains, and sets the order

@@ -29,7 +29,3 @@ Analysis: {{path to the reviewed product code analysis}}
 
 {{What the company has decided about the path to market, and on what basis — or Not decided yet.
 If the device may not fit any existing code, say so here.}}
-
-## Open questions
-
-{{What is not settled, and who is settling it — or None}}

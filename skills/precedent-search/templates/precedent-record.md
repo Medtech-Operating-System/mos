@@ -27,7 +27,3 @@ The technological differences a submission has to address, taken from the compar
 | Row | New device | Primary predicate | The question it raises |
 |---|---|---|---|
 | {{principle of operation}} | {{}} | {{}} | {{performance / biocompatibility / electrical safety / usability}} |
-
-## Open questions
-
-{{What is not settled, and who is settling it — or None}}

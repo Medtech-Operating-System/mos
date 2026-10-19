@@ -1,19 +1,21 @@
 ---
 name: reimbursement
-description: Work out how a medical device would be paid for in the US — whether billing codes exist for it, whether Medicare covers it, and who gets paid under which system in each setting where it is used — and what it would take to close each gap. Use when a team needs to know whether its device can be paid for, find the codes and coverage policies that apply, or understand what payers will want before choosing its indications.
-version: 0.1.0
+description: Work out how a medical device would be paid for in the US — whether billing codes exist for it, whether Medicare covers it, who gets paid under which system in each setting where it is used, how much Medicare pays, and how much of that payment is left for the device — and what it would take to close each gap. Use when a team needs to know whether its device can be paid for, what Medicare pays for the codes involved, find the codes and coverage policies that apply, or understand what payers will want before choosing its indications.
+version: 0.3.0
 maintainer: Eric Sugalski
 phase: [00-concept, 01-definition]
 discipline: [commercial]
 reads:
   - context/context-map.md
+  - context/*_issues-list.*
   - context/product/**
   - context/commercial/**
   - context/regulatory/**
   - context/clinical/**
   - context/templates/**
 writes:
-  - outputs/commercial/
+  - context/commercial/
+  - context/inbox/
 status: draft
 ---
 
@@ -22,9 +24,10 @@ status: draft
 Works out how the device would be paid for, in each setting where it is used, by answering three
 questions: **coding** — is there a billing code for the procedure and the device; **coverage** —
 will Medicare pay for it, and on what conditions; **payment** — who gets paid, under which
-payment system, and whether the device is paid for separately or folded into a fixed payment.
+payment system, how much Medicare pays, whether the device is paid for separately or folded into a
+fixed payment, and how much of that payment is left for the device.
 Where there is a gap, it names the route to close it and what that route needs. The output is a
-Word document in `outputs/commercial/`, built from the company's template: a draft for review, not
+Word document in `context/commercial/`, built from the company's template: a draft for review, not
 a controlled record.
 
 Read `mos/context-standard.md` before starting if you have not already, then read
@@ -54,20 +57,26 @@ commercial payers as a question for the team's own advisors.
 ## Rules for this skill
 
 - **Never send company text outside.** CMS receives only requests for its complete lists of
-  coverage policies and the numbers of the national policies read; the lists are searched on this
-  machine. Code lookups send generic procedure, device and condition words to the National Library
-  of Medicine. Never the company's product name, indications, claims, description or any file's
-  contents.
+  coverage policies, the numbers of the national policies read, and its complete public payment
+  files; the lists and files are searched on this machine. Code lookups send generic procedure,
+  device and condition words to the National Library of Medicine. Never the company's product
+  name, indications, claims, description, price or any file's contents.
 - **Show every query before it runs**, and log every one.
 - **CPT codes are the American Medical Association's copyright.** Cite a CPT code by its number,
   never its description, and only a number the user gives or a public source names. Do not look
   up CPT codes. Any document that cites one carries the AMA's copyright notice.
 - **Do not accept a license on the user's behalf.** Local coverage policies and billing articles
   are served in full only under the AMA's license. List them with their public page; a person reads
-  them. Record what a person reports they say, in plain words.
-- **Do not invent a rate, a code or a timeline.** A payment amount comes from the user or a CMS
-  source the user has read; a code from a lookup or the user; a timeline only where a public source
-  states one. Where none exists, say it is not known.
+  them. Record what a person reports they say, in plain words. The payment files that carry CPT
+  codes — the physician fee schedule, hospital outpatient and surgery center rates — are the same:
+  the user downloads them, and the script reads the saved file.
+- **Do not invent a rate, a share, a code or a timeline.** A payment amount comes from `cms.py
+  payment`, which reads CMS's published files, or from the user; a device's share of a payment
+  from CMS's device offset or the team's own price; a code from a lookup or the user; a timeline
+  only where a public source states one. No rule of thumb for a manufacturer's cut, no private
+  insurer's rate. Where none exists, say it is not known.
+- **An amount is not coverage.** A fee schedule lists amounts for codes Medicare may not cover for
+  this use. Report the amount beside the coverage finding, never instead of it.
 - **Test what the user brings before relying on it.** "There is already a code for this", "the
   hospital will pay for it", "Medicare covers this": check each against the codes and policies
   found. Where they disagree, say so plainly, give the evidence, and ask the user to reconsider.
@@ -82,25 +91,44 @@ commercial payers as a question for the team's own advisors.
 
 ### 1. Establish what context exists
 
+**First, the folder layout.** If an `outputs/` folder sits beside `context/`, this company was
+set up before MOS 0.3, when drafts were kept there. Run `python mos/lib/layout.py check` and show
+the user what it lists, with one sentence on why: drafts now sit in `context/` beside the records
+they would revise, and the filename says which is which. On a yes, run
+`python mos/lib/layout.py apply`. For each file it lists as left over, ask whether to delete it,
+move it where the script suggests, or leave it, and pass the answers as `--delete <path>` and
+`--move <path>`. On a no, read and write drafts in `outputs/<domain>/` for this run instead of
+`context/<domain>/`, and say that the next skill will ask again.
+
 Check for `context/context-map.md`.
 
 - **It exists** — read it. Read, weighing each by the order of trust in the context standard:
-  - **The device.** `context/product/device-profile.md`: what it does, the indications as drafted,
-    users, use environments, single-use or reusable, commercial intent — especially **who buys**.
-  - **The buyers and payers.** The differentiation analysis in `context/commercial/` or,
-    unreviewed, `outputs/commercial/`: who decides, who pays, the value proposition for each, the
+  - **The device.** The target product profile — the newest `target-product-profile_rev*.docx`
+    in `context/product/`, or, unreviewed, `target-product-profile_draft.docx` there:
+    what it does, the indications as drafted, users, setting, single-use or reusable, and its
+    commercial rows — especially **who buys**, the selling price, the cost of goods and how the
+    team expects it to be paid for. If there is none, an earlier `setup` put these in
+    `context/product/device-profile.md`; read them there, and suggest re-running `setup` to
+    convert it.
+  - **The buyers and payers.** The differentiation analysis in `context/commercial/`, reviewed or draft: who decides, who pays, the value proposition for each, the
     competitors and the alternatives.
-  - **The regulatory position.** A classification or precedent search in `context/regulatory/` or
-    `outputs/regulatory/`: the class and pathway expected, and any Breakthrough Device designation.
+  - **The regulatory position.** A classification or precedent search in `context/regulatory/`: the class and pathway expected, and any Breakthrough Device designation.
   - **Clinical evidence.** Anything in `context/clinical/`. Coverage turns on evidence of benefit.
-  - **Earlier work.** Any earlier reimbursement analysis in `context/commercial/` or
-    `outputs/commercial/`.
+  - **Earlier work.** Any earlier reimbursement analysis in `context/commercial/`.
 
   Read Word documents with `python mos/lib/mosdocx.py read <file>`. Tell the user what you found and
   which of it is unreviewed. List contradictions; do not resolve them.
 - **It does not exist** — say so. Say that this skill is stronger after `setup` and
   `differentiation`, which record who buys and who pays. Then offer to continue from the
   conversation.
+
+**Offer clean copies of finished drafts.** For each `_draft` this skill reads, ask once:
+*"Is the review of this document finished, and is it ready to route for signature?"* On a yes,
+run `python mos/lib/mosdocx.py clean <file>`, show what it says it will do, and run it again with
+`--apply` on a second yes. It writes the clean copy, `_revA`, without the working notes, and keeps
+the full draft in `archive/`. If it refuses because of tracked changes or comments, say what to do
+in Word first. MOS approves nothing: the clean copy becomes the record when it is signed in the
+company's quality system. A draft that stays a draft is still read, and cited as unreviewed.
 
 Anything you need outside the declared paths, ask for by name and say why.
 
@@ -117,10 +145,11 @@ step still applies.
 
 ### 3. Tell the user what will leave the machine
 
-In one short paragraph: CMS receives requests for its complete lists of coverage policies and the
-numbers of national policies read, and nothing about the device, because the lists are searched on
-this machine; generic procedure, device and condition words go to the National Library of Medicine
-to look up public codes. Nothing else leaves.
+In one short paragraph: CMS receives requests for its complete lists of coverage policies, the
+numbers of national policies read, and its complete public payment files, and nothing about the
+device, because the lists and files are searched on this machine; generic procedure, device and
+condition words go to the National Library of Medicine to look up public codes. Nothing else
+leaves. The team's price, if it gives one, stays in the conversation and the draft.
 
 ### 4. Map where the device is used, and who is paid
 
@@ -204,7 +233,7 @@ whether it is reasonable and necessary. No policy is not the same as covered.
 **Commercial payers**: name the largest likely ones as a question for the team's advisors. Do not
 research their policies.
 
-### 7. Payment: who is paid, and is the device paid for?
+### 7. Payment: who is paid, how much, and how much is left for the device?
 
 For each setting, say:
 
@@ -214,12 +243,53 @@ For each setting, say:
   surgery-center care, the device is usually folded into the facility's fixed payment. In a
   physician's office, a supply may be folded into the physician's payment. At home, equipment is
   usually paid as an item.
-- **The payment amount**, only where the user supplies it or has read it from a CMS source. The
-  skill does not look up or compute rates.
+- **How much Medicare pays**, from CMS's published files, for each code or group found:
+
+  | Setting | Command | What it reads |
+  |---|---|---|
+  | Home | `python mos/lib/cms.py payment dme E0730` | The DMEPOS fee schedule: each state's amount, non-rural and rural. Fetched by the script |
+  | Inpatient | `python mos/lib/cms.py payment drg 470` | The MS-DRG's weight times the national standardized amounts. Fetched by the script |
+  | Physician, any setting | `python mos/lib/cms.py payment pfs 99213` | The physician fee schedule: office and facility amounts, by locality. The user's file |
+  | Hospital outpatient | `python mos/lib/cms.py payment opps 99213` | The APC payment, and CMS's device offset where the procedure is device-intensive. The user's file |
+  | Surgery center | `python mos/lib/cms.py payment asc 99213` | The ASC payment. The user's file |
+
+  Report the national amount and the lowest and highest amount across states or localities. Name
+  the source file and the date read. An MS-DRG for a stay comes from the team's advisors or a
+  public source; do not guess one.
+
+  **The files that carry CPT codes** — `pfs`, `opps`, `asc` — are the AMA's under license. When the
+  script says the file is missing, tell the user which file it named, where to download it, and
+  that downloading it means accepting the AMA's license, which is theirs to accept. They save the
+  zip in `context/commercial/cms-files/`, unopened; then run the command again. If they would rather
+  not, record the amount as not looked up and go on.
+
+- **How much is left for the device.** Take the selling price from the target product profile,
+  minimum acceptable and target, and say so. If it is not set, ask the team, a plain question:
+  *"What do you expect to charge the buyer for the device — the hospital, the clinic, the
+  supplier? FDA has nothing to do with this; it is your price, and a rough number is fine."* Then,
+  per setting:
+  - **Bundled into a facility payment** (inpatient, outpatient, surgery center): the device's price
+    as a share of the payment, and what is left to the facility for everything else in the stay or
+    procedure. Where `payment opps` reports a **device offset**, give it beside the team's price: it
+    is the share of the payment CMS attributes to device cost for that procedure, a benchmark the
+    hospital's buyers will know. It is not the maker's revenue.
+  - **Paid as an item at home** (DMEPOS): the supplier is paid the fee schedule amount and buys the
+    device from the maker. The maker's revenue is its price to the supplier. Give that price as a
+    share of the fee schedule amount, and what is left to the supplier for delivery, fitting,
+    billing and service. Say that Medicare pays 80% and the patient 20%.
+  - **Supplied in a physician's office**: the device's price against the physician's office
+    (non-facility) payment for the service.
+
+  Where the team has no price, give the payment and say the share cannot be worked out until there
+  is one. Never use a typical industry share: none is public, and an invented one would be read as
+  fact.
+
 - **Who pays and who benefits.** Where the device is bundled into a fixed payment, say plainly that
   its price comes out of the facility's margin, and name the economic case the buyer will need:
   what the device saves elsewhere, such as complications, length of stay, readmissions or staff
   time. The case itself belongs in `differentiation`. This skill builds no economic model.
+
+Private insurers set their own rates, often by contract and not published. Do not estimate them.
 
 ### 8. Where it stands today
 
@@ -227,11 +297,11 @@ For each setting, summarize the position in the terms `indications-strategy` sco
 
 | Position | When |
 |---|---|
-| **Strong** | An existing code fits, it is covered, and it is paid adequately — adequacy only where a rate is known |
-| **Partial** | A code exists but coverage is uncertain, or the device is bundled into a fixed payment |
-| **Weak** | A new code and coverage are both needed |
+| **Strong** | An existing code fits, it is covered, and the payment leaves room for the device at the team's price |
+| **Partial** | A code exists but coverage is uncertain, the device is bundled into a fixed payment, or the payment leaves little room at the team's price |
+| **Weak** | A new code and coverage are both needed, or a policy denies coverage for this use |
 
-Say where adequacy is unknown because no rate was supplied.
+Say where adequacy is unknown because no amount was found or the team has no price.
 
 ### 9. Name the routes to close each gap
 
@@ -279,28 +349,53 @@ Fill `templates/reimbursement.md`. Write dates in the Date format from
 `context/templates/document-settings.md`, if it exists. The search log lists every query in order.
 Show the user the complete content. Confirm.
 
-Save the filled template to `outputs/commercial/reimbursement.source.md` and run:
+Save the filled template to `context/commercial/reimbursement.source.md` and run:
 
 ```
-python mos/lib/mosdocx.py render --in outputs/commercial/reimbursement.source.md --out outputs/commercial/reimbursement_draft.docx --title "Reimbursement — <device>" --remove-input
+python mos/lib/mosdocx.py render --in context/commercial/reimbursement.source.md --out context/commercial/reimbursement_draft.docx --title "Reimbursement — <device>" --remove-input
 ```
+
+Where a reviewed `reimbursement_rev*.docx` is already there, name the draft for the revision
+after it instead — `reimbursement_revB_draft.docx` beside `reimbursement_revA.docx` — in the command and
+everything below.
 
 If `reimbursement_draft.docx` already exists, the script refuses to overwrite it. Show what changed
 and ask; add `--force` only on a yes. If the script cannot run, write the filled template to
-`outputs/commercial/reimbursement.md` instead, and say that Word output needs the step in `setup`.
+`context/commercial/reimbursement_draft.md` instead, and say that Word output needs the step in `setup`.
 
-Tell the user how the draft becomes the record: review and redline it in Word, save it with the
-revision in its name — `reimbursement_revA.docx` — in `context/commercial/`, or in their quality
-system with the context map pointing at it, then delete the draft from `outputs/commercial/`. Until
-then, `indications-strategy` reads the draft and says it is unreviewed.
+Tell the user how the draft becomes the record: review and redline it in Word, then accept or
+reject every change and delete the comments. When the review is finished, make the clean copy: the
+next MOS skill run offers it, or run `python mos/lib/mosdocx.py clean <draft> --apply`. It writes
+`reimbursement_revA.docx`, or `_revB` for a `_revB_draft`, without the working notes, and moves the full
+draft, and the revision it replaces, into `archive/`. The clean copy goes for signature, and
+becomes the record when it is signed in the company's quality system. Where the company files
+records there, file it there with the context map pointing at it, and delete the copy from
+`context/commercial/`. Until then, `indications-strategy` reads the draft and says it is unreviewed.
+
+### 13. Hand off the issues
+
+List what this session found and did not settle: what is missing and who would know; amounts that
+stayed unknown, and why; contradictions between documents; the questions for advisors and CMS from
+step 11, as one issue that points at that section of the draft rather than one issue each; and
+target product profile rows the analysis bears on — a price the payment cannot carry, a
+reimbursement route the coverage does not support, a buyer the payment systems point away from —
+each with what the row says now and what the analysis found. For each, give its type (question,
+conflict, gap, assumption, risk to the plan), its domain, what it blocks and the next step. Check
+the current issues list — the newest `<YYMMDD>_issues-list.docx` in `context/` — and leave out what
+is already on it, unless this session found something new about it.
+
+Show the list. On a yes, write it to `context/inbox/<YYMMDD>_issues_reimbursement.md`, in the format
+the context standard gives. Then ask the user to run `issues-list` now, while this session still
+holds what was found. Never edit the issues list or the target product profile. If nothing is
+unsettled, say so and write no note.
 
 ## Working at three levels of context
 
 | What the company has | How this skill behaves |
 |---|---|
 | Nothing | Says it is stronger after `setup` and `differentiation`. Asks what the device does, where it is used, who buys it and how many patients are on Medicare. Explains each idea as it comes — a code, coverage, a payment system, a bundled payment. Every line resting on the conversation says so |
-| Some files | Starts from the device profile and the differentiation analysis; says which are unreviewed; interviews only for the settings and payers they leave out |
-| A full document set | Traces each setting to the device profile, each payer to the differentiation analysis, each coverage condition to clinical evidence on file. Flags contradictions — a buyer who will absorb a bundled cost the value proposition does not address, a claim of coverage no policy supports — rather than resolving them |
+| Some files | Starts from the target product profile and the differentiation analysis; says which are unreviewed; interviews only for the settings and payers they leave out |
+| A full document set | Traces each setting to the target product profile, each payer to the differentiation analysis, each coverage condition to clinical evidence on file. Flags contradictions — a buyer who will absorb a bundled cost the value proposition does not address, a claim of coverage no policy supports — rather than resolving them |
 
 ## Interviewing style
 
@@ -313,10 +408,11 @@ then, `indications-strategy` reads the draft and says it is unreviewed.
 
 ## Boundaries
 
-This skill does not give billing or coding advice, research commercial payers' policies, look up
-CPT codes, compute or look up payment rates, build an economic model, file any application, or go
-deep on laboratory tests and in vitro diagnostics. It reads Medicare's public coverage database and
-public code tables; it does not know what any payer decided privately.
+This skill does not give billing or coding advice, research commercial payers' policies or rates,
+look up CPT codes, estimate a manufacturer's typical share, build an economic model, file any
+application, or go deep on laboratory tests and in vitro diagnostics. It reads Medicare's public
+coverage database, public code tables and published payment files; it does not know what any payer
+decided or pays privately.
 
 ## Where this skill is weakest
 
@@ -326,7 +422,14 @@ Recorded so it gets fixed rather than rediscovered:
   advisors.
 - It does not read local coverage policies in full, because their text is licensed; a person reads
   them, and what they report is only as good as that reading.
-- It does not look up payment rates, so whether a payment is adequate is often unknown.
+- Payment amounts are Medicare's published national and local amounts, before a claim's own
+  adjustments. A hospital's real payment for a stay depends on its wage index and other
+  adjustments the script does not apply.
+- Physician, outpatient and surgery center amounts need a file the user downloads under the AMA's
+  license. Without it, those amounts stay unknown.
+- The device's share depends on the team's price. Without one, the skill reports the payment and
+  cannot say how much is left for the device.
+- An MS-DRG for an inpatient stay is not looked up; it comes from the team's advisors.
 - Commercial payers are named, not researched. For a device whose patients are mostly not on
   Medicare, the analysis is thin.
 - Searching coverage policy titles misses a policy whose title does not name the procedure or the

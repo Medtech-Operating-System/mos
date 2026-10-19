@@ -189,7 +189,9 @@ Every device considered and set aside, with the reason, so the search can be che
 |---|---|---|---|---|
 | {{K123456}} | {{name}} | {{date}} | {{code}} | {{name or function unlike this device / statement only / superseded}} |
 
-## Appendix B: Search Log
+## Working Notes
+
+### Search Log
 
 Every query sent to FDA or the eCFR, in order, so it can be run again. No company document,
 product name or claim was sent. All queries were run on {{date}}, unless a row says otherwise.
@@ -200,10 +202,14 @@ product name or claim was sent. All queries were run on {{date}}, unless a row s
 
 Summaries downloaded and read: {{numbers}} — {{n}} in all, and why that was enough.
 
-## Appendix C: Open Questions and Challenges
+### Depth and Challenges
 
-{{Unclear gates; summaries that could not be read; contradictions between documents; beliefs the
-evidence challenged, and whether each was revised or confirmed over the challenge.}}
+Summaries that could not be read: {{each, and what the search did without it — or None}}
+
+Challenges: {{beliefs the evidence challenged, and whether each was revised or confirmed over the
+challenge — or None}}
+
+The open questions, gaps and contradictions this search raised are on the company's issues list.
 
 ---
 

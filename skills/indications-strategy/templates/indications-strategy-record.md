@@ -54,7 +54,3 @@ not a budget.
 
 - {{e.g. A second submission to widen the indications, and the data it needs — or None}}
 - Questions for FDA: {{the Pre-Submission questions for this version}}
-
-## Open questions
-
-{{What is not settled, and who is settling it — or None}}

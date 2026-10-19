@@ -76,10 +76,12 @@ not fit any existing code, which points toward a De Novo request (or a PMA if th
 where the answer is uncertain enough that a Pre-Submission, a written request for FDA's feedback
 before filing, is the way to settle it.}}
 
-Next step: {{run precedent-search on the chosen code / hold a Pre-Submission / resolve the open
-questions in Appendix B first}}
+Next step: {{run precedent-search on the chosen code / hold a Pre-Submission / settle the issues
+this analysis raised first}}
 
-## Appendix A: Search Log
+## Working Notes
+
+### Search Log
 
 Every query this analysis sent to FDA, in order, so it can be run again. The search terms were
 written for FDA's databases; no company document or statement was sent. All queries were run on
@@ -95,13 +97,21 @@ openFDA is updated about weekly, and FDA asks that its data be treated as unvali
 decided after the dates on the cover is not reflected here. Confirm the chosen code on FDA's
 Product Classification page before relying on it.
 
-## Appendix B: Open Questions and Gaps
+### Depth, Scope and Challenges
 
 Summaries read, and why that was enough: {{per code: how many, which, and the reason}}
 
-{{What would change the shortlist: unanswered interview questions, contradictions between
-documents, parts of the device outside the scope of this skill (a drug or biologic component; a
-device regulated by FDA's biologics center), and codes that could not be checked.}}
+Scope: {{whether it was judged from the description or asked; any part of the device outside this
+skill — a drug or biologic component, a device regulated by FDA's biologics center — and how it was
+handled}}
+
+Departures from the predicate's wording: {{each change the company wants, the rung of the ladder it
+reaches and the evidence it is likely to require — or None}}
+
+Challenges: {{beliefs the analysis challenged, and whether each was revised or confirmed over the
+challenge — or None}}
+
+The open questions, gaps and contradictions this analysis raised are on the company's issues list.
 
 ---
 

@@ -3,8 +3,9 @@
 Company: {{company}}
 Written: {{date}} · Source: MOS reimbursement skill
 
-*Notes: A draft. It maps how the device would be paid for in the US — codes, Medicare coverage and
-payment, in each setting where it is used — and the routes to close each gap. It covers Medicare;
+*Notes: A draft. It maps how the device would be paid for in the US — codes, Medicare coverage,
+payment and Medicare's published amounts, in each setting where it is used — and the routes to
+close each gap. It covers Medicare;
 commercial payers are named as questions for the company's advisors. It is a planning map, not
 billing or coding advice. Each finding notes its source: a company document, with its path; a
 Medicare coverage policy or code table, with its number and the date read; a policy a person read
@@ -12,12 +13,13 @@ and reported; or this session's interview, which has not been reviewed.*
 
 ## Summary
 
-| Setting | Coding | Coverage | Payment | Position today |
-|---|---|---|---|---|
-| {{inpatient / hospital outpatient / ASC / office / home}} | {{fits / fits badly / no code}} | {{national / local / limited / no policy}} | {{system — separate or bundled}} | {{Strong / Partial / Weak}} |
+| Setting | Coding | Coverage | Payment | Medicare pays | Left for the device | Position today |
+|---|---|---|---|---|---|---|
+| {{inpatient / hospital outpatient / ASC / office / home}} | {{fits / fits badly / no code}} | {{national / local / limited / no policy}} | {{system — separate or bundled}} | {{national amount, or Not looked up}} | {{share at the team's price, or Not known}} | {{Strong / Partial / Weak}} |
 
-{{One paragraph, plain words: can the device be paid for today, where, and what is the biggest gap.
-Say plainly if the buyer absorbs its cost.}}
+{{One paragraph, plain words: can the device be paid for today, where, how much Medicare pays, how
+much of it is left for the device, and what is the biggest gap. Say plainly if the buyer absorbs
+its cost.}}
 
 ## Where the Device Is Used
 
@@ -66,9 +68,28 @@ Commercial payers: {{the likely ones, as a question for the company's advisors}}
 
 ## Payment
 
-| Setting | Payment system | Likely code or group | Device paid separately or bundled | Amount | Source of amount |
+### What Medicare pays
+
+| Setting | Payment system | Code or group | Paid to | Device paid separately or bundled | National amount | Lowest to highest | Source |
+|---|---|---|---|---|---|---|---|
+| {{setting}} | {{system}} | {{code or group, or Not known}} | {{supplier / hospital / center / physician}} | {{Separately / Bundled}} | {{amount, or Not looked up — why}} | {{range, with the states or localities}} | {{CMS file and date read / the user}} |
+
+Published Medicare amounts, before a claim's own adjustments. An amount is not coverage: read it
+beside the coverage finding above. Private insurers set their own rates; they are not estimated
+here.
+
+### How much is left for the device
+
+The team's expected price to the buyer: {{price, who it is charged to, and where it came from — or
+Not known yet}}
+
+| Setting | Payment | Device's price | Device as a share of the payment | Left for the {{supplier / hospital / center / physician}} | CMS device offset |
 |---|---|---|---|---|---|
-| {{setting}} | {{system}} | {{code or group, or Not known}} | {{Separately / Bundled}} | {{amount, or Not known}} | {{user / CMS source read by the user / —}} |
+| {{setting}} | {{amount}} | {{price, or Not known}} | {{%, or Not known}} | {{amount and what it must cover}} | {{% for a device-intensive outpatient procedure, or Not published}} |
+
+{{In plain words: is there room for the device at this price? The device offset is CMS's estimate
+of device cost within the payment, not the maker's revenue. Where there is no price, say the share
+cannot be worked out until there is one.}}
 
 **Who pays and who benefits:** {{Where the device is bundled, say that its price comes out of the
 buyer's margin, and name the economic case the buyer will need — what it saves elsewhere. Or: Not
@@ -93,21 +114,25 @@ coverage or payment.
 
 1. {{A question for a reimbursement or coding advisor, or for CMS or a Medicare contractor}}
 
-## Appendix A: Search Log
+## Working Notes
 
-Every query sent outside the company, in order. CMS received requests for its complete lists and
-the numbers of national policies read; the National Library of Medicine received generic procedure,
-device and condition words. No company document, product name, indication or claim was sent.
+### Search Log
+
+Every query sent outside the company, in order, and every CMS payment file the user supplied. CMS
+received requests for its complete lists, the numbers of national policies read, and its complete
+public payment files; the National Library of Medicine received generic procedure, device and
+condition words. No company document, product name, indication, claim or price was sent.
 
 | # | What was searched | Query | Sent to | Results returned |
 |---|---|---|---|---|
 | 1 | {{plain words}} | {{query exactly as run}} | {{CMS / National Library of Medicine}} | {{n}} |
 
-## Appendix B: Open Questions and Challenges
+### Challenges
 
-{{What is missing and who would know; contradictions between documents; beliefs the analysis
-challenged — a code the team thought fit, coverage it assumed — and whether each was revised or
-confirmed over the challenge.}}
+{{Beliefs the analysis challenged — a code the team thought fit, coverage it assumed — and whether
+each was revised or confirmed over the challenge — or None}}
+
+The open questions, gaps and contradictions this analysis raised are on the company's issues list.
 
 ---
 

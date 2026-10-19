@@ -1,6 +1,6 @@
 # The MOS context standard
 
-*v0.3, 2026-09-24. The folder structure MOS skills read and write. This is the part of MOS that
+*v0.8, 2026-10-17. The folder structure MOS skills read and write. This is the part of MOS that
 compounds: skills are replaceable, context is not.*
 
 Two things live on your machine. **Your context** — the files your company already has, wherever
@@ -28,6 +28,8 @@ Acme Medical/                 <- your folder; sync it with anything, or nothing
 ├── mos/                      <- downloaded; replaceable; yours to delete
 ├── context/
 │   ├── context-map.md        <- what MOS can read. Read first by every skill
+│   ├── 261016_issues-list.docx  <- what is open, across every domain. Dated
+│   ├── document-register.md  <- every document's number, revision and status
 │   ├── inbox/                <- drop anything here; triaged later
 │   ├── templates/            <- document settings, and the template built from them
 │   ├── product/
@@ -37,22 +39,28 @@ Acme Medical/                 <- your folder; sync it with anything, or nothing
 │   ├── manufacturing/
 │   ├── clinical/
 │   ├── regulatory/
+│   │   ├── standards/        <- standards your company has bought, if any
+│   │   └── labeling/         <- other devices' labeling, one folder per device
 │   └── commercial/
-└── outputs/                  <- MOS drafts, before review. Not records
-    ├── users-and-needs/      <- the same eight domains as context/,
-    ├── regulatory/              created as skills write to them
-    └── commercial/
+│       ├── reimbursement_draft.docx     <- written by MOS, not yet reviewed
+│       └── differentiation_revA.docx    <- reviewed: a record
 ```
 
-**Two stages, one organization.** `context/` holds what your company stands behind; `outputs/`
-holds what MOS drafted and nobody has reviewed yet. Both are organized by the same eight domains,
-so a draft's place is obvious before it is written, and so is where it goes once reviewed.
+**One folder, and the filename says the status.** Everything lives in `context/`, by domain: your
+own files, MOS drafts, and the records the team made from them. A draft is named
+`<document>_draft.docx`, a record `<document>_revA.docx`, and a proposed change to a record
+`<document>_revB_draft.docx`, beside the revision it would replace. A draft's place is obvious
+before it is written, and reviewing it does not move it anywhere.
 
-**Skills read both.** Everything MOS has drafted informs the skills that run after it, reviewed or
-not. What changes with review is how far a skill trusts a document, not whether it can see it: see
-*Which source wins* below. Drafts are kept out of `context/` for one reason: for many companies,
-the folders `context/` points at are their own controlled filing, and an unreviewed AI draft does
-not belong there.
+**Skills read drafts and records alike.** Everything MOS has drafted informs the skills that run
+after it, reviewed or not. What changes with review is how far a skill trusts a document, not
+whether it can see it: see *Which source wins* below.
+
+**MOS writes only into this folder.** Where the map points a domain at your own controlled filing
+— `S:/Quality/Regulatory Affairs/`, say — MOS reads it and never writes to it. Its drafts go in
+the local `context/<domain>/`, and the map lists that folder too; where it does not yet, the skill
+adds the line when it writes its first draft there, as part of that approved write. An unreviewed AI draft does not
+belong in a quality system; the team files the reviewed document there themselves.
 
 ### The eight domains
 
@@ -63,13 +71,13 @@ lifecycle map — a document in `design/` is usually the work of more than one d
 
 | Domain | What belongs here |
 |---|---|
-| `product/` | What the device is. Device description, intended use, indications for use, claims, current stage. The first thing every other skill reads |
+| `product/` | What the device is. The target product profile, the device profile, and the company's own device description, intended use or pitch material. The first thing every other skill reads |
 | `users-and-needs/` | Who uses it and what they need. User needs, use environments, user profiles, use-related research |
 | `risk/` | The risk file. Hazard analysis, risk management plan and report, risk controls and their verification |
 | `design/` | Design inputs and outputs, design reviews, specifications, drawings, software architecture, verification and validation plans and reports |
 | `manufacturing/` | How it gets made. Process development, make-versus-buy, suppliers, process validation, cost of goods |
 | `clinical/` | Evidence. Clinical strategy, protocols, investigator materials, reports, literature, post-market clinical follow-up |
-| `regulatory/` | Pathway and correspondence. Classification, predicate analysis, submission strategy, agency meetings and their minutes, the standards list, labeling |
+| `regulatory/` | Pathway and correspondence. Classification, predicate analysis, submission strategy, agency meetings and their minutes, the standards list, labeling, and in `standards/` the standards the company has bought |
 | `commercial/` | Market and money. Market analysis, competitive landscape, pricing, reimbursement and coding, launch and distribution plans |
 
 Empty domains are normal. A company at concept stage has three of these, and that is the correct
@@ -201,31 +209,154 @@ Like `inbox/`, `templates/` is always in scope and needs no line in the map.
 
 ### From draft to record
 
-A skill writes its draft to `outputs/<domain>/`, named `<document>_draft.docx`. It becomes a record
-when a person makes it one:
+A skill writes its draft to `context/<domain>/`, named `<document>_draft.docx`. Where a record of
+the document is already there, the draft names the revision it proposes:
+`user-needs_revB_draft.docx` beside `user-needs_revA.docx`. A draft ends with a section headed
+**Working Notes**, in italics: what its reviewers need and the signed document does not, such as
+the search log, coverage checks and the challenges a skill raised.
+
+It becomes a record when a person makes it one:
 
 1. Review and redline the draft in Word.
-2. Save the result as a new file with the revision in its name — `user-needs_revA.docx` — in the
-   domain it belongs to, or in the quality system with the map pointing at it.
-3. Delete the draft from `outputs/`. **A promotion moves the document; it does not copy it.** From
-   then on the reviewed file is the document, and one document never exists in two places.
+2. Accept or reject every change, and delete the comments.
+3. Make the clean copy. MOS skills offer to when they find a draft whose review is finished, or run
+   `python mos/lib/mosdocx.py clean <draft> --apply`. It writes `user-needs_revA.docx`, or `_revB`
+   for a `_revB_draft`, without the working notes, and moves the full draft, and the revision it
+   replaces, into `archive/`.
+4. Route the clean copy for signature in your quality system. It becomes the record when it is
+   signed. MOS approves nothing and records no signature. Where the company files records in its
+   quality system, file it there with the map pointing at it, and delete the copy from `context/`.
 
-A draft that is never promoted still counts: later skills read it, and say that they are relying
-on an unreviewed draft. Promoting it makes it something they can rely on without saying so.
+**One document, one current file.** Outside `archive/` there is one record and at most one draft.
+The full draft kept in `archive/` holds the reasoning behind that revision; skills never read it.
+
+A draft that has no clean copy yet still counts: later skills read it, and say that they are
+relying on an unreviewed draft. A clean copy is something they can rely on without saying so.
 
 **A separate record only records a decision.** Most of what a skill produces lives in its
 document. Where a person makes a decision the document does not hold — the analysis compares
 product codes, and a person chooses one — a skill writes a short Markdown record of that decision
 to the domain, with the user's approval. It never writes a record that restates a document.
 
+### The document register
+
+`context/document-register.md` lists every document MOS writes for the company: its number,
+title, current file, revision and status. `setup` writes it, and `mos/lib/mosdocx.py` keeps it up
+to date, so nobody has to remember to. A new draft gets the next number for its domain's prefix —
+`DIR-001` for the design inputs, `REG-002` for the second regulatory document — and keeps that
+number through every revision; each clean copy records its revision. The number goes on the cover
+and in the footer. The prefixes are in the register, and the company may change them.
+
+A company whose quality system assigns document numbers sets `Numbering: Quality system`. MOS then
+assigns none: the team enters the number its system gives each document, and MOS uses it from then
+on.
+
+The status is `Draft`, `Draft of rev B`, `Clean copy, for signature`, `In quality system` — which
+the team sets once the document is signed and filed — or `Retired`. A retired number is never
+reused. The issues list and the decision records are not numbered.
+
+### The target product profile and the device profile
+
+`setup` writes two documents about the device, and each fact has one home:
+
+- **The target product profile** records what the product must be: what the device is, its use and
+  indications, its clinical and technical performance, usability, claims, price and cost of goods,
+  regulatory expectations and milestone dates — each number at a minimum acceptable and a target
+  level. It is a deliverable: a Word draft, `context/product/target-product-profile_draft.docx`,
+  redlined by the team, and its clean copy is `target-product-profile_revA.docx`. It is the reference every skill reads for
+  the product.
+- **The device profile**, `context/product/device-profile.md`, records where the project is: stage,
+  what already exists, agency contact so far, risk notes, what drives the timeline, and the team.
+  It is a working file, and it says where the target product profile is.
+
+**Skills never edit the target product profile.** When a skill finds something that bears on a row
+— an expected class FDA's records do not support, a price the payment cannot carry, indications the
+team chose in another form — it raises it as an issue for the issues list: the row, what it says
+now and what the skill found. The team decides. A skill may put the question to the user during its
+run, and send the answer with the issue. Once the issue is closed, `setup` drafts the next revision
+from it: it reads the closed issues whose resolution revises a row, applies each change the team
+confirms, and lists each in the revision's *Changes in this revision* appendix with the issue's
+ID. The team reviews that draft like any other. A team that prefers to redline the profile in
+Word may; `setup` then finds the row already says what the resolution asks, and leaves it.
+
+A device profile written by a `setup` before 0.5.0 holds the product facts itself. Skills read them
+there when no target product profile exists, and suggest re-running `setup`, which converts it.
+
+### The issues list
+
+Developing a device turns up questions faster than anyone answers them. The issues list is where
+every one of them goes: one Word document for the company, across every domain, kept by the
+`issues-list` skill. A question in one document's appendix is found only by someone who opens that
+document; a question on the list is seen by the whole team.
+
+| Type | The plain question |
+|---|---|
+| **Question** | What has not been decided yet? |
+| **Conflict** | Where do two sources, or two people, disagree? |
+| **Gap** | What is missing that something else needs? |
+| **Assumption** | What did we take as true so the work could go on? |
+| **Risk to the plan** | What could move the schedule, the cost or the pathway? |
+
+Each issue has an ID, `ISS-001` onward, never renumbered or reused; a domain, one of the eight;
+what it blocks — a skill, a target product profile row, a milestone; an owner; a status, `Open`,
+`Closed` or `Won't do`; and the next step, which becomes the resolution once it is closed. The
+list is grouped by domain, and closed issues stay on it, at the end, with what settled them.
+
+**Where it lives.** `context/<YYMMDD>_issues-list.docx` — `261016_issues-list.docx` for one
+written on 16 October 2026. It is a working document, not a draft waiting for a clean copy; it is never signed. The team
+edits it directly in Word between runs: changes a status, writes a resolution, adds a row, leaves a
+comment. Each run of `issues-list` reads those edits and writes the next list under that day's
+date, and the one it replaces moves to `context/archive/`. The archive is the list's history. If
+more than one list sits outside `archive/`, the skill stops and asks, as it would for any
+document.
+
+**How issues reach it.** No other skill edits the list, and no skill's document carries its own
+open questions: each issue has one home. At the end of a run, a skill lists what it found and did
+not settle, and on the user's approval writes it to a note in `context/inbox/`, named
+`<YYMMDD>_issues_<skill>.md`, one line per issue:
+
+```markdown
+# Issues from product-code — 2026-10-16
+
+- **Conflict · regulatory** — The target product profile expects Class II; the closest product
+  codes are Class III. Blocks: precedent-search; target product profile row 8.1. Next step: decide
+  the classification; a pre-submission meeting with FDA would confirm it.
+```
+
+**Decided in the session.** Where the question is one the user can answer during the run — keep a
+target product profile row or change it — a skill may ask, one row at a time. The answer goes on
+the issue's line, with who decided and when, and a `Revise:` line where it changes a document:
+
+```markdown
+- **Question · product** — The predicate's labeling gives 12 hours of battery life; the target
+  product profile's minimum is 8 hours. Blocks: target product profile row 4.2. Next step: decide
+  the minimum. Decided: raise the minimum to match the predicate, by Jane Doe, 2026-10-17.
+  Revise: target product profile row 4.2 — minimum from "≥ 8 h" to "≥ 12 h".
+```
+
+`issues-list` logs a decided issue as closed, with the decision as its resolution, and does not ask
+the question again. An answer of *decide later* is an open issue like any other.
+
+Then it asks the user to run `issues-list`, which logs each note and deletes it once logged. A note
+nobody logs is still in `inbox/`, where the next run of `issues-list` finds it.
+
+**Closing an issue.** `issues-list` proposes; a person confirms. Closing an issue never edits
+another document: where the resolution changes one — a target product profile row, a claim — the
+resolution names it in a `Revise:` line, and the team makes the next revision. For the target
+product profile, `setup` drafts it from those lines.
+
+**What does not go on it.** A hazard to a patient or user belongs in the risk file in `risk/`. A
+complaint, a nonconformance or a corrective action belongs in the quality system. The list is not a
+project schedule, and a decision, once made, lives in the document or decision record that holds
+it; the closed issue points there.
+
 ### Which source wins
 
 Skills weigh what they read in this order, highest first:
 
-1. **Reviewed records in `context/`** — revisions a person saved into a domain, and decision
-   records.
-2. **The company's other documents in `context/`** — its own files, reviewed or not.
-3. **MOS drafts in `outputs/`** — always cited as coming from an unreviewed draft.
+1. **Reviewed records** — a `_rev` file with no `_draft` in its name, and decision records.
+2. **The company's other documents** — its own files, reviewed or not.
+3. **MOS drafts** — any file named `_draft`, always cited as coming from an unreviewed draft.
 4. **The conversation** — someone's recollection, not yet written down.
 
 A lower source never overrides a higher one. Where they disagree, the skill says so and asks; it
@@ -239,8 +370,9 @@ Drafting against a superseded risk file is an error that survives into a submiss
 1. Put the revision in the filename: `risk-management-plan_revC.docx`.
 2. Superseded revisions go in an `archive/` subfolder. **`archive/` is excluded by default
    everywhere**, without needing a line in the map.
-3. Where a skill finds more than one revision of the same document outside `archive/`, it stops and
-   says so rather than guessing.
+3. Outside `archive/`, a document has one record and at most one draft of the revision after it.
+   Where a skill finds more — two records, two drafts, a draft that names no revision beside a
+   record — it stops and says so rather than guessing.
 
 ### `inbox/`
 
@@ -248,10 +380,31 @@ Drafting against a superseded risk file is an error that survives into a submiss
 supplier email, a call summary — with no decision about where it goes. Capture is the step that
 fails, so its cost is set to zero.
 
+Skills put one thing there themselves: a note of the issues a run found, for `issues-list` to log.
+See *The issues list* above.
+
 The trade is that something has to empty it. Until the context librarian skill ships, that is you:
 move files into the right domain when you think of it. **An inbox nothing triages is a graveyard**,
 which is why this is the only folder of its kind in the standard. There is no `notes/`, no `misc/`
 and no `general/`.
+
+### Standards you have bought
+
+MOS ships no text from ISO, IEC, AAMI or any other copyrighted standard. Some work goes better
+with one: a list of hazards is stronger when checked against the examples in ISO 14971 and
+ISO/TR 24971.
+If your company holds licensed copies, put them in `context/regulatory/standards/`, one file per
+standard, with the number and edition in the filename: `ISO 14971-2019.pdf`. It is the one
+subfolder the standard defines inside a domain, because the skills that use a standard need to
+find it without searching.
+
+A skill that finds one asks before reading it. Reading a standard sends its text to your AI
+provider as part of the prompt, and some publishers' licence terms restrict putting their documents
+into AI tools. Whether yours allows it is your decision, and MOS does not rule on it. A skill cites
+clause numbers from your standards and never copies their text or tables into a draft: drafts are
+shared, and your licence covers your copy, not the people you send a draft to.
+
+Without the folder, skills work from public sources and say which check they could not do.
 
 ### Digests
 
@@ -275,6 +428,16 @@ contents before they crossed**.
 
 Digests go stale — that is what the `sources` block is for. Raw files never do: skills read what is
 on disk at the moment they read it. There is no index to re-sync and no cache to invalidate.
+
+## Moving from an older layout
+
+Before v0.6, drafts went to a separate `outputs/` folder and a person moved them into `context/` to
+make them records. Where a skill finds an `outputs/` folder, it stops before anything else and runs
+`mos/lib/layout.py check`, which lists every move and writes nothing. On a yes, `layout.py apply`
+moves each draft into `context/<domain>/`, named by the rules above, moves downloaded reference
+material such as FDA summaries to the same place, and adds each local domain folder to the map.
+Files that do not fit — a leftover render input, a Markdown copy beside its Word draft — are listed
+and left alone unless you say what to do with each. `outputs/` is removed once it is empty.
 
 ## What not to add
 
@@ -316,14 +479,20 @@ before it runs, and every one is logged in the document it produces.
 
 | Service | Run by | Used by | What is sent |
 |---|---|---|---|
-| openFDA, FDA's device databases, fda.gov | FDA | `product-code`, `precedent-search`, `differentiation`, `indications-strategy` | Generic device words, product codes, regulation and submission numbers, competitor names |
-| eCFR | Office of the Federal Register | `product-code`, `precedent-search` | Regulation numbers |
+| openFDA, FDA's device databases, fda.gov | FDA | `product-code`, `precedent-search`, `predicate-profile`, `differentiation`, `indications-strategy`, `hazards-id` | Generic device words, product codes, regulation and submission numbers, competitor names |
+| eCFR | Office of the Federal Register | `product-code`, `precedent-search`, `hazards-id` | Regulation numbers |
 | ClinicalTrials.gov | National Library of Medicine | `indications-strategy` | Conditions, generic device words, competitor names |
 | Clinical Tables | National Library of Medicine | `reimbursement` | Generic procedure, device and condition words |
 | Medicare Coverage Database, cms.gov | CMS | `reimbursement` | No search terms. The skill downloads Medicare's complete policy lists and searches them on your machine, then reads national policies by number |
 
-`differentiation` also offers an optional web search for what competitors publish. It runs through
-your AI tool's own web search, under that provider's terms, and only if you say yes.
+`differentiation` also offers an optional web search for what competitors publish, `hazards-id`
+one for similar devices' published labeling, and `predicate-profile` one for the labeling,
+specifications and product pages of the devices you chose to study. Each runs through your AI
+tool's own web search, under that provider's terms, sends brand names, manufacturer names, model
+numbers and device categories, and runs only if you say yes.
+
+`setup` offers to read your company's own public website. The page addresses go to your site
+through your AI tool's own web access, under that provider's terms, and only if you say yes.
 
 Skills are plain Markdown, so they also run against a local model, with nothing leaving the machine
 but the public-record searches above. Output quality drops, and that path is documented rather than
@@ -331,11 +500,19 @@ recommended.
 
 ## Status
 
-v0.3. The layout, the map format and the conventions above are settled enough to build against, and
+v0.8. The layout, the map format and the conventions above are settled enough to build against, and
 are expected to change once skills have run against real companies. v0.2 follows the first such run:
 deliverables moved to Word, and `templates/` and the path from draft to record were added. v0.3
 makes drafts readable by every skill, organizes `outputs/` by the eight domains, and sets the order
-in which sources are trusted.
+in which sources are trusted. v0.4 adds the target product profile and gives each fact about the
+device one home. v0.5 adds the issues list, which takes the open questions out of every other
+document. v0.6 retires `outputs/`: drafts sit in `context/` beside the records they would revise,
+the filename carries the status, and promotion is a rename. v0.7 adds `regulatory/standards/`, where
+a company puts the standards it has bought so skills can use them without MOS shipping their text.
+v0.8 adds the document register, `regulatory/labeling/` for other devices' labeling, issues
+decided during a skill's run, the path from a closed issue to the next revision of the target
+product profile, and working notes and the clean copy: a reviewed draft's working notes are left out of the
+version that goes for signature, and the full draft is kept in `archive/`.
 
 Open, and worth arguing about:
 
@@ -343,5 +520,6 @@ Open, and worth arguing about:
 2. Should the map carry per-path dates, so skills can tell recent work from archaeology?
 3. What is the minimum a two-person company adopts on day one without it feeling like bureaucracy —
    is it `product/` and the map, and nothing else?
-4. Should the device profile become a Word deliverable too? It is reviewed like one, but every skill
-   reads it, and it is kept in Markdown for now for that reason.
+4. ~~Should the device profile become a Word deliverable too?~~ Answered in part: what the product
+   must be moved into the target product profile, a Word deliverable. The device profile stays a
+   Markdown working file for project status.

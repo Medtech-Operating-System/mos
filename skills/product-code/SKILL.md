@@ -1,20 +1,21 @@
 ---
 name: product-code
 description: Find the FDA product codes that may fit a medical device, and report what each one implies for its class and path to market, from FDA's public classification database. Use when a team needs to classify a device, check a classification it has assumed, or learn which regulatory pathway a product code points to.
-version: 0.1.0
+version: 0.3.0
 maintainer: Eric Sugalski
 phase: [00-concept, 01-definition]
 discipline: [regulatory]
 reads:
   - context/context-map.md
+  - context/*_issues-list.*
   - context/product/**
   - context/regulatory/**
   - context/commercial/**
   - context/templates/**
 writes:
-  - outputs/regulatory/
+  - context/regulatory/
   - context/regulatory/classification.md    # only on the user's approval, after review
-  - context/product/device-profile.md       # only on the user's approval, to add answers
+  - context/inbox/
 status: draft
 ---
 
@@ -22,7 +23,7 @@ status: draft
 
 Finds the FDA product codes that may fit a device and reports what each one implies: class,
 regulation, submission type, and what that means for the path to market. The output is a Word
-document in `outputs/regulatory/`, built from the company's template: a draft for review, not
+document in `context/regulatory/`, built from the company's template: a draft for review, not
 a controlled record. It is the first of three regulatory research skills; `precedent-search`
 and `reference-devices` build on the code a person chooses here.
 
@@ -71,7 +72,7 @@ confident wrong answer. Get the indications right before searching.
   discussion, and it is hard to move away from once it exists.
 - **Scope is devices regulated by FDA's device center (CDRH).** If the device includes a drug or
   a biologic, or is used in blood collection and processing or with cell and tissue products,
-  say that part is outside this skill, record it in Appendix B, and classify only the device
+  say that part is outside this skill, record it in the working notes, and classify only the device
   function that is in scope.
 - **Do not write into `context/`** without approval of that specific write. The classification
   record in step 9 is written only after a person has reviewed the analysis and chosen a code.
@@ -82,24 +83,44 @@ confident wrong answer. Get the indications right before searching.
 
 ### 1. Establish what context exists
 
+**First, the folder layout.** If an `outputs/` folder sits beside `context/`, this company was
+set up before MOS 0.3, when drafts were kept there. Run `python mos/lib/layout.py check` and show
+the user what it lists, with one sentence on why: drafts now sit in `context/` beside the records
+they would revise, and the filename says which is which. On a yes, run
+`python mos/lib/layout.py apply`. For each file it lists as left over, ask whether to delete it,
+move it where the script suggests, or leave it, and pass the answers as `--delete <path>` and
+`--move <path>`. On a no, read and write drafts in `outputs/<domain>/` for this run instead of
+`context/<domain>/`, and say that the next skill will ask again.
+
 Check for `context/context-map.md`.
 
-- **It exists** — read it. Read `context/product/device-profile.md` if it is there, and whatever
-  the map points at under `product/` and `regulatory/`. Read the commercial intent in the device
-  profile, and the differentiation analysis under `commercial/`, reviewed or draft: its Claims
-  table lists the claims the company says it must be able to make, and they shape the
-  indications this skill drafts. Read Word documents with
+- **It exists** — read it. Read the target product profile: the newest
+  `target-product-profile_rev*.docx` in `context/product/`, or, unreviewed, `target-product-profile_draft.docx` there. It holds the intended use, indications,
+  device description, claims and the company's regulatory expectations. Read
+  `context/product/device-profile.md` for the stage and agency contact, and whatever the map
+  points at under `product/` and `regulatory/`. If there is no target product profile, an earlier
+  `setup` put the product facts in the device profile: read them there, and suggest re-running
+  `setup` to convert it. Read the differentiation analysis under `commercial/`, reviewed or draft:
+  its Claims table, with the target product profile's, lists the claims the company says it must
+  be able to make, and they shape the indications this skill drafts. Read Word documents with
   `python mos/lib/mosdocx.py read <file>`. Tell the user what you found.
-  - Read the drafts in `outputs/product/`, `outputs/regulatory/` and `outputs/commercial/` too.
-    An earlier product code analysis, or a differentiation draft nobody has reviewed, still
+  - Drafts sit beside the records in each domain, named `_draft`. Read them too. An earlier product code analysis, or a differentiation draft nobody has reviewed, still
     informs this run. Say which drafts you are relying on and that they are unreviewed. A
     reviewed document or record outranks a draft; where they disagree, say so and ask.
   - If `context/regulatory/classification.md` exists, a code has been chosen before. Ask whether
     this run is to check it or to start again, and do not overwrite it.
-  - If documents disagree — the device profile says Class II and a strategy memo says Class III,
+  - If documents disagree — the target product profile says Class II and a strategy memo says Class III,
     or two documents give different indications — list the contradictions. Do not pick one.
 - **It does not exist** — say so, and say that running `setup` first will make this skill better.
   Then offer to continue from the conversation alone. Do not refuse to work.
+
+**Offer clean copies of finished drafts.** For each `_draft` this skill reads, ask once:
+*"Is the review of this document finished, and is it ready to route for signature?"* On a yes,
+run `python mos/lib/mosdocx.py clean <file>`, show what it says it will do, and run it again with
+`--apply` on a second yes. It writes the clean copy, `_revA`, without the working notes, and keeps
+the full draft in `archive/`. If it refuses because of tracked changes or comments, say what to do
+in Word first. MOS approves nothing: the clean copy becomes the record when it is signed in the
+company's quality system. A draft that stays a draft is still read, and cited as unreviewed.
 
 Anything you need outside the declared paths, ask for by name and say why. Write the answer back
 to the context map so the question is not asked twice.
@@ -124,7 +145,7 @@ to run it and paste or save the results. Everything after this step still applie
 
 ### 3. Interview for what is missing
 
-The skill needs five things. Take each from the device profile or another document where one
+The skill needs five things. Take each from the target product profile or another document where one
 answers it, say which, and ask only for the rest. One question at a time.
 
 1. *What does the device do, in one sentence?* FDA calls this the **intended use**.
@@ -185,8 +206,8 @@ tissue*), then organ or organ system, then a specific disease or population, the
 clinical outcome. The further up the ladder, the likelier FDA sees a new intended use. A *tool*
 claim (the device cuts tissue) is safer than a *treatment* claim (the device treats a disease).
 
-**Check the draft against the claims the company needs.** Where the device profile or the
-differentiation analysis — in `context/commercial/` or, unreviewed, in `outputs/commercial/` —
+**Check the draft against the claims the company needs.** Where the target product profile or the
+differentiation analysis — in `context/commercial/`, reviewed or draft —
 lists must-have claims, set each one against the draft indications. A
 must-have claim the indications cannot carry is a conflict to name now, not after a code is
 chosen: say which claim, which words it would need, and how far up the ladder they reach.
@@ -196,11 +217,16 @@ what makes a device sellable: naming the condition a buyer cares about, or a set
 cannot claim. Where the company wants that, do not argue it away. Say which rung of the ladder the
 change reaches, what evidence it is likely to require, and that the choice between a close match
 and a stronger claim is a commercial and regulatory decision for the company. Record it in
-Appendix B.
+the working notes.
 
-Then ask two scope questions: *Does the device contain or deliver a drug or a biologic?* and
-*Is it used in blood collection or processing, or with cell or tissue products?* A yes to either
-is recorded and handled as the scope rule says.
+Then settle scope from what you already know. A device with a drug or biologic in it, or one used
+in blood collection or processing or with cell or tissue products, is partly outside this skill
+(see the scope rule). Judge it from the device description, the technology and what touches the
+patient. Where they plainly rule it out, as for an electronic or software device with no
+substance delivered, do not ask; record in the working notes that scope was judged from the
+description. Ask only where something leaves it open: a coating, a substance delivered or
+released, an implant that could carry one, contact with blood outside the body, or a description
+too thin to tell. A yes is recorded and handled as the scope rule says.
 
 ### 4. Write the search terms
 
@@ -282,10 +308,10 @@ proportion to the uncertainty:
 
 ```
 python mos/lib/openfda.py clearances --code ABC --limit 200
-python mos/lib/openfda.py fetch K123456 DEN123456 --out outputs/regulatory/summaries
+python mos/lib/openfda.py fetch K123456 DEN123456 --out context/regulatory/summaries
 ```
 
-Record in Appendix B how many summaries were read under each code, and why that was enough.
+Record in the working notes how many summaries were read under each code, and why that was enough.
 
 **If you cannot read PDF files**, say so plainly. List the summaries the user should read, and
 tell them this step works best with an AI that can read PDFs — Claude, for example — and that
@@ -338,47 +364,67 @@ possibility to confirm, not a conclusion, and that a Pre-Submission is how to co
 ### 8. Write the draft
 
 Fill `templates/product-code.md`. Write dates in the Date format from
-`context/templates/document-settings.md`, if it exists. The search log in Appendix A lists every
+`context/templates/document-settings.md`, if it exists. The search log in the working notes lists every
 query the script printed, in order, with its result count. Show the user the complete content.
 Confirm.
 
 Then deliver it as a Word document. Save the filled template to
-`outputs/regulatory/product-code.source.md` and run:
+`context/regulatory/product-code.source.md` and run:
 
 ```
-python mos/lib/mosdocx.py render --in outputs/regulatory/product-code.source.md --out outputs/regulatory/product-code_draft.docx --title "Product Code Analysis — <device>" --remove-input
+python mos/lib/mosdocx.py render --in context/regulatory/product-code.source.md --out context/regulatory/product-code_draft.docx --title "Product Code Analysis — <device>" --remove-input
 ```
+
+Where a reviewed `product-code_rev*.docx` is already there, name the draft for the revision
+after it instead — `product-code_revB_draft.docx` beside `product-code_revA.docx` — in the command and
+everything below.
 
 If `product-code_draft.docx` already exists, the script refuses to overwrite it. Show what changed
 and ask; add `--force` only on a yes. If the script cannot run, write the filled template to
-`outputs/regulatory/product-code.md` instead, and say that Word output needs the step in
+`context/regulatory/product-code_draft.md` instead, and say that Word output needs the step in
 `setup`.
 
-Tell the user how the draft becomes the record: review and redline it in Word, then save it with
-the revision in its name — `product-code_revA.docx` — in `context/regulatory/`, or in their
-quality system with the context map pointing at it. The summaries in
-`outputs/regulatory/summaries/` are FDA's public documents; keep the ones the analysis relied on
-beside it, or delete them.
+Tell the user how the draft becomes the record: review and redline it in Word, then accept or
+reject every change and delete the comments. When the review is finished, make the clean copy: the
+next MOS skill run offers it, or run `python mos/lib/mosdocx.py clean <draft> --apply`. It writes
+`product-code_revA.docx`, or `_revB` for a `_revB_draft`, without the working notes, and moves the full
+draft, and the revision it replaces, into `archive/`. The clean copy goes for signature, and
+becomes the record when it is signed in the company's quality system. Where the company files
+records there, file it there with the context map pointing at it, and delete the copy from
+`context/regulatory/`. The summaries in `context/regulatory/summaries/` are FDA's public documents;
+keep the ones the analysis relied on beside it, or delete them.
 
-### 9. Offer to write what belongs in context
+### 9. Offer to write the classification record
 
-Two offers. Name each file, show the full content, and write only on a yes.
+Once a person has reviewed the analysis and chosen a code — not before — fill
+`templates/classification-record.md` and offer to write it to
+`context/regulatory/classification.md`. Show the full content, and write only on a yes. It records
+who chose the code and when. The `precedent-search` skill reads it. If the user has not chosen yet,
+say that this file waits until they have.
 
-1. **The classification record.** Once a person has reviewed the analysis and chosen a code —
-   not before — fill `templates/classification-record.md` and offer to write it to
-   `context/regulatory/classification.md`. It records who chose the code and when. The
-   `precedent-search` skill reads it. If the user has not chosen yet, say that this file waits
-   until they have.
-2. **The device profile.** If the interview produced answers the profile lacks — indications
-   drafted in this session, a patient-contact duration, a body site — offer to add them to
-   `context/product/device-profile.md`, each marked as coming from this session.
+### 10. Hand off the issues
+
+List what this session found and did not settle: interview questions left unanswered;
+contradictions between documents; codes that could not be checked; a part of the device outside
+this skill's scope, and who would classify it; the choice of code, if nobody has made it yet; and
+target product profile rows the session bears on — indications drafted in this session, a
+patient-contact duration, a body site, an expected class the analysis disagrees with — each with
+what the row says now and what this session found. For each, give its type (question, conflict,
+gap, assumption, risk to the plan), its domain, what it blocks and the next step. Check the current
+issues list — the newest `<YYMMDD>_issues-list.docx` in `context/` — and leave out what is already
+on it, unless this session found something new about it.
+
+Show the list. On a yes, write it to `context/inbox/<YYMMDD>_issues_product-code.md`, in the format
+the context standard gives. Then ask the user to run `issues-list` now, while this session still
+holds what was found. Never edit the issues list or the target product profile. If nothing is
+unsettled, say so and write no note.
 
 ## Working at three levels of context
 
 | What the company has | How this skill behaves |
 |---|---|
 | Nothing | Runs the full interview, explaining in plain words why each answer matters to classification, and marks every description in the analysis as from the conversation. Where the indications are not written, drafts them with the user and says the shortlist depends on them |
-| Some files | Takes intended use, indications and technology from the device profile or other documents, interviews only for the gaps, and says which answers came from where |
+| Some files | Takes intended use, indications and technology from the target product profile or other documents, interviews only for the gaps, and says which answers came from where |
 | A full document set | Checks an existing classification against FDA's current record: a code whose definition has changed, a regulation that has moved, a new code created since the choice was made. Flags contradictions between the chosen code and the indications in the company's documents rather than resolving them |
 
 ## Interviewing style

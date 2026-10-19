@@ -65,7 +65,9 @@ are not renumbered.
 |---|---|---|---|
 | {{publisher}} | {{the claim or fact, reported as the source states it}} | {{url}} | {{date}} |
 
-## Appendix B: Search Log
+## Working Notes
+
+### Search Log
 
 Every query sent outside the company, in order. The terms named device categories, clinical
 functions and competitors; no company document, product name or claim was sent.
@@ -74,11 +76,12 @@ functions and competitors; no company document, product name or claim was sent.
 |---|---|---|---|---|
 | 1 | {{plain words}} | {{query exactly as run}} | {{FDA / web search}} | {{n}} |
 
-## Appendix C: Open Questions and Challenges
+### Challenges
 
-{{Stakeholder answers still Not known yet, and the customer conversations that would answer them;
-contradictions between documents; founder beliefs the evidence challenged, and whether each was
-revised or confirmed over the challenge.}}
+{{Founder beliefs the evidence challenged, and whether each was revised or confirmed over the
+challenge — or None}}
+
+The open questions, gaps and contradictions this analysis raised are on the company's issues list.
 
 ---
 

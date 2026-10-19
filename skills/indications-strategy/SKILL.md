@@ -1,12 +1,13 @@
 ---
 name: indications-strategy
 description: Draft three or four versions of a medical device's indications for use statement — from one as close to the predicate as possible, with the fewest clinical studies, to one that carries the claims that set the device apart — and compare what each costs in pathway, clinical evidence, time and money. Use when a team needs to decide what to ask FDA to clear, weigh a 510(k) against a De Novo or PMA, or see what a more compelling indication would cost in clinical studies.
-version: 0.1.0
+version: 0.3.0
 maintainer: Eric Sugalski
 phase: [00-concept, 01-definition]
 discipline: [regulatory, clinical, commercial]
 reads:
   - context/context-map.md
+  - context/*_issues-list.*
   - context/product/**
   - context/users-and-needs/**
   - context/risk/**
@@ -15,9 +16,9 @@ reads:
   - context/clinical/**
   - context/templates/**
 writes:
-  - outputs/regulatory/
+  - context/regulatory/
   - context/regulatory/indications-strategy.md    # only on the user's approval, after a person has chosen
-  - context/product/device-profile.md             # only on the user's approval, to record the chosen indications
+  - context/inbox/
 status: draft
 ---
 
@@ -30,7 +31,7 @@ indications as possible: the fastest path, with as few clinical studies as the d
 other is a version that carries the claims that set the device apart, on a harder pathway that
 likely needs clinical data. For each version the skill works out the pathway, the evidence FDA will
 want, the studies that evidence needs, and their time and cost. The output is a Word document in
-`outputs/regulatory/`, built from the company's template: a draft for review, not a controlled
+`context/regulatory/`, built from the company's template: a draft for review, not a controlled
 record.
 
 Read `mos/context-standard.md` before starting if you have not already, then read
@@ -104,26 +105,37 @@ the start when those are missing, and name the skill that would fill each gap.
 
 ### 1. Establish what context exists
 
+**First, the folder layout.** If an `outputs/` folder sits beside `context/`, this company was
+set up before MOS 0.3, when drafts were kept there. Run `python mos/lib/layout.py check` and show
+the user what it lists, with one sentence on why: drafts now sit in `context/` beside the records
+they would revise, and the filename says which is which. On a yes, run
+`python mos/lib/layout.py apply`. For each file it lists as left over, ask whether to delete it,
+move it where the script suggests, or leave it, and pass the answers as `--delete <path>` and
+`--move <path>`. On a no, read and write drafts in `outputs/<domain>/` for this run instead of
+`context/<domain>/`, and say that the next skill will ask again.
+
 Check for `context/context-map.md`.
 
 - **It exists** — read it. Read, weighing each by the order of trust in the context standard:
-  - **The device.** `context/product/device-profile.md`: intended use, the indications for use as
-    the team has drafted them, contraindications, how it works, users and setting, commercial
-    intent — and its **risk profile**: invasiveness, software documentation level, sterility,
-    patient contact, energy, novel aspects with no standard to point at, and the hazards the team is
-    already worried about.
-  - **The risks.** Anything in `context/risk/` or, unreviewed, `outputs/risk/`: a hazard analysis,
+  - **The device.** The target product profile — the newest `target-product-profile_rev*.docx`
+    in `context/product/`, or, unreviewed, `target-product-profile_draft.docx` there:
+    intended use, the indications for use as the team has drafted them, contraindications, how it
+    works, users and setting, claims, the clinical performance targets, and the device's
+    invasiveness, sterility, patient contact and energy. Then the risk notes in
+    `context/product/device-profile.md`: software documentation level, novel aspects with no
+    standard to point at, and the hazards the team is already worried about. If there is no target
+    product profile, an earlier `setup` put all of this in the device profile; read it there, and
+    suggest re-running `setup` to convert it.
+  - **The risks.** Anything in `context/risk/`, reviewed or draft: a hazard analysis,
     a risk management file, a list of hazards and harms. For each serious harm, note its severity
     and the risk control that is meant to prevent it. A risk control whose effectiveness has to be
     shown in people is an evidence question.
-  - **The user needs.** The user needs in `context/users-and-needs/` or, unreviewed,
-    `outputs/users-and-needs/`. The ones marked **safety-critical** — a realistic failure could
+  - **The user needs.** The user needs in `context/users-and-needs/`, reviewed or draft. The ones marked **safety-critical** — a realistic failure could
     harm a patient or user — and the ones marked Critical need validation evidence: human factors,
     and sometimes clinical.
-  - **The claims.** The differentiation analysis in `context/commercial/` or, unreviewed,
-    `outputs/commercial/`: each claim's ID, wording, stakeholder, type and priority.
+  - **The claims.** The differentiation analysis in `context/commercial/`, reviewed or draft: each claim's ID, wording, stakeholder, type and priority.
   - **The classification.** `context/regulatory/classification.md`, if a person has chosen a
-    code; otherwise a product code analysis in `context/regulatory/` or `outputs/regulatory/`.
+    code; otherwise a product code analysis in `context/regulatory/`.
   - **The precedent.** `context/regulatory/precedent.md`, if a predicate has been chosen; the
     precedent search, reviewed or draft. Read six parts of it:
     - the **predicates' indications for use**, word for word. The closest version starts here;
@@ -136,7 +148,7 @@ Check for `context/context-map.md`.
       mitigate them;
     - for a PMA, the **clinical studies behind earlier approvals**: design, endpoints, patients,
       follow-up. Study estimates start there.
-  - **Reimbursement.** A reimbursement analysis in `context/commercial/` or `outputs/commercial/`,
+  - **Reimbursement.** A reimbursement analysis in `context/commercial/`,
     if one exists.
   - **Clinical evidence the company already has.** Anything in `context/clinical/`: published
     literature, earlier studies, a clinical strategy.
@@ -158,6 +170,14 @@ Then tell the user plainly what is missing and what it costs the analysis, one l
 | Classification (`product-code`) | The pathway for each version is reasoned from the device description, not from FDA's record |
 | Precedent (`precedent-search`) | No predicate wording to anchor the closest version, no technological differences or special controls to test, and study estimates start from general averages rather than studies of devices like this one |
 | Reimbursement analysis | The reimbursement score reads "Not assessed" |
+
+**Offer clean copies of finished drafts.** For each `_draft` this skill reads, ask once:
+*"Is the review of this document finished, and is it ready to route for signature?"* On a yes,
+run `python mos/lib/mosdocx.py clean <file>`, show what it says it will do, and run it again with
+`--apply` on a second yes. It writes the clean copy, `_revA`, without the working notes, and keeps
+the full draft in `archive/`. If it refuses because of tracked changes or comments, say what to do
+in Word first. MOS approves nothing: the clean copy becomes the record when it is signed in the
+company's quality system. A draft that stays a draft is still read, and cited as unreviewed.
 
 Anything you need outside the declared paths, ask for by name and say why.
 
@@ -185,7 +205,7 @@ Get the likely predicate's indications for use, word for word: from the preceden
 the predicate's 510(k) summary or De Novo decision summary:
 
 ```
-python mos/lib/openfda.py fetch K212763 --out outputs/regulatory/summaries
+python mos/lib/openfda.py fetch K212763 --out context/regulatory/summaries
 ```
 
 If there is no predicate — the device is headed for a De Novo or a PMA — use the nearest devices the
@@ -499,21 +519,29 @@ Fill `templates/indications-strategy.md`. Write dates in the Date format from
 `context/templates/document-settings.md`, if it exists. The search log lists every query in order.
 Show the user the complete content. Confirm.
 
-Save the filled template to `outputs/regulatory/indications-strategy.source.md` and run:
+Save the filled template to `context/regulatory/indications-strategy.source.md` and run:
 
 ```
-python mos/lib/mosdocx.py render --in outputs/regulatory/indications-strategy.source.md --out outputs/regulatory/indications-strategy_draft.docx --title "Indications Strategy — <device>" --remove-input
+python mos/lib/mosdocx.py render --in context/regulatory/indications-strategy.source.md --out context/regulatory/indications-strategy_draft.docx --title "Indications Strategy — <device>" --remove-input
 ```
+
+Where a reviewed `indications-strategy_rev*.docx` is already there, name the draft for the revision
+after it instead — `indications-strategy_revB_draft.docx` beside `indications-strategy_revA.docx` — in the command and
+everything below.
 
 If `indications-strategy_draft.docx` already exists, the script refuses to overwrite it. Show what
 changed and ask; add `--force` only on a yes. If the script cannot run, write the filled template to
-`outputs/regulatory/indications-strategy.md` instead, and say that Word output needs the step in
+`context/regulatory/indications-strategy_draft.md` instead, and say that Word output needs the step in
 `setup`.
 
-Tell the user how the draft becomes the record: review and redline it in Word, save it with the
-revision in its name — `indications-strategy_revA.docx` — in `context/regulatory/`, or in the
-quality system with the map pointing at it, then delete the draft from `outputs/regulatory/`. Until
-then, later skills read the draft and say it is unreviewed.
+Tell the user how the draft becomes the record: review and redline it in Word, then accept or
+reject every change and delete the comments. When the review is finished, make the clean copy: the
+next MOS skill run offers it, or run `python mos/lib/mosdocx.py clean <draft> --apply`. It writes
+`indications-strategy_revA.docx`, or `_revB` for a `_revB_draft`, without the working notes, and moves the full
+draft, and the revision it replaces, into `archive/`. The clean copy goes for signature, and
+becomes the record when it is signed in the company's quality system. Where the company files
+records there, file it there with the context map pointing at it, and delete the copy from
+`context/regulatory/`. Until then, later skills read the draft and say it is unreviewed.
 
 ### 16. Offer to record the choice
 
@@ -526,14 +554,29 @@ yet, say the record waits until they have.
 
 Then say what the choice sets off:
 
-- **If the chosen wording differs from the device profile's indications**, offer to update
-  `context/product/device-profile.md`, the change marked as coming from this session. Write only on
-  a yes.
 - **If the wording changed**, `product-code` and `precedent-search` should be run again: different
   indications can mean a different code or predicate.
 - **If the chosen version has a clinical study**, it needs designing in depth before a
   Pre-Submission: this skill's estimate is for choosing, not for budgeting. Say so, and that the
   record holds the starting point.
+
+### 17. Hand off the issues
+
+List what this session found and did not settle: what is missing and which skill would supply it;
+contradictions between documents — a serious hazard with no evidence planned, a technological
+difference the team calls minor that the predicates tested clinically, a team draft that already
+moves the intended use; the choice of version, if nobody has made it yet; the reruns of
+`product-code` and `precedent-search` a changed wording calls for; and target product profile rows
+the choice bears on — the indications, and any claims the chosen version gives up — each with what
+the row says now and what the session found. For each, give its type (question, conflict, gap,
+assumption, risk to the plan), its domain, what it blocks and the next step. Check the current
+issues list — the newest `<YYMMDD>_issues-list.docx` in `context/` — and leave out what is already
+on it, unless this session found something new about it.
+
+Show the list. On a yes, write it to `context/inbox/<YYMMDD>_issues_indications-strategy.md`, in the
+format the context standard gives. Then ask the user to run `issues-list` now, while this session
+still holds what was found. Never edit the issues list or the target product profile. If nothing is
+unsettled, say so and write no note.
 
 ## Working at three levels of context
 

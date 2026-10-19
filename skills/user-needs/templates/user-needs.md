@@ -18,9 +18,9 @@ Regulatory class and pathway: {{class, pathway — or Not known yet}}
 
 *Source: {{interview / path}}*
 
-| ID | User need | Role | Use stage | Priority | Safety-critical | Rationale | Source |
-|---|---|---|---|---|---|---|---|
-| UN-001 | The {{role}} shall {{outcome}}. | {{role}} | {{prepare / use / monitor / complete / handoff}} | {{Critical / Important / Desirable}} | {{Y / N}} | {{One sentence tied to risk, workflow or evidence}} | {{interview / path}} |
+| ID | User need | Role | Use stage | Priority | Safety-critical | Hazards | Rationale | Source |
+|---|---|---|---|---|---|---|---|---|
+| UN-001 | The {{role}} shall {{outcome}}. | {{role}} | {{prepare / use / monitor / complete / handoff}} | {{Critical / Important / Desirable}} | {{Y / N}} | {{HZ-IDs — or —}} | {{One sentence tied to risk, workflow or evidence}} | {{interview / path}} |
 
 **ID** — Each need keeps its ID permanently. If a need is deleted, its ID is retired rather than
 reused, and the other needs are not renumbered. That way a risk file or test report that cites
@@ -32,7 +32,12 @@ preference.
 **Safety-critical** — `Y` means a realistic failure to meet this need could lead to patient or user
 harm. Every `Y` needs a corresponding entry in the risk file.
 
-## Appendix A: Coverage
+**Hazards** — the hazards on the company's hazard list this need answers, by ID. A need that
+answers a hazard is safety-critical.
+
+## Working Notes
+
+### Coverage
 
 This section is intended to identify each of the users and confirm that user needs are generated
 to address their needs.
@@ -45,17 +50,16 @@ to address their needs.
 | Reprocessor / service | | | | | |
 | Purchaser | | | | | |
 
-## Appendix B: Open gaps
+### Hazard Coverage
 
-Where more work is warranted before this list is frozen.
+{{Where there is a hazard list: every hazard on it, and how it is answered. Otherwise: No hazard
+list was available; hazards-id would provide one.}}
 
-- {{Gap, and what would close it}}
+Hazard list: {{path, and whether reviewed or an unreviewed draft}}
 
-## Appendix C: Contradictions found and not resolved
-
-Where the documents disagree with each other or with the interview. Listed, not resolved.
-
-- {{What disagrees with what, and where each came from}}
+| Hazard | Harm | Answered by |
+|---|---|---|
+| {{HZ-001}} | {{harm}} | {{UN-IDs / Design inputs, not a user need / Open — on the issues list}} |
 
 ---
 

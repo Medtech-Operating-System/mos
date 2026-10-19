@@ -198,7 +198,9 @@ primary completion, so they include follow-up.
 |---|---|---|
 | {{per-patient cost, pivotal}} | {{value}} | {{MOS clinical cost bands, section / user / record}} |
 
-## Appendix D: Search Log
+## Working Notes
+
+### Search Log
 
 Every query sent outside the company, in order. The terms named conditions, generic device words,
 product codes and document numbers; no company document, product name, indication or claim was
@@ -208,12 +210,12 @@ sent.
 |---|---|---|---|---|
 | 1 | {{plain words}} | {{query exactly as run}} | {{FDA / ClinicalTrials.gov}} | {{n}} |
 
-## Appendix E: Open Questions and Challenges
+### Challenges
 
-{{What is missing and which skill would supply it; contradictions between documents — a serious
-hazard with no evidence planned, a technological difference the team calls minor that the
-predicates tested clinically, a team draft that already moves the intended use; beliefs the
-analysis challenged, and whether each was revised or confirmed over the challenge.}}
+{{Beliefs the analysis challenged, and whether each was revised or confirmed over the challenge —
+or None}}
+
+The open questions, gaps and contradictions this analysis raised are on the company's issues list.
 
 ---
 

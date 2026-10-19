@@ -1,19 +1,20 @@
 ---
 name: differentiation
 description: Work out how a medical device will win against the alternatives a buyer has — competitors, current practice, doing nothing — and which claims that difference rests on. Use when a team needs to define its competitive position, sharpen its value proposition for each stakeholder, or settle the claims its marketing will need before the regulatory work begins.
-version: 0.1.0
+version: 0.3.0
 maintainer: Eric Sugalski
 phase: [00-concept, 01-definition]
 discipline: [commercial]
 reads:
   - context/context-map.md
+  - context/*_issues-list.*
   - context/product/**
   - context/users-and-needs/**
   - context/commercial/**
   - context/templates/**
 writes:
-  - outputs/commercial/
-  - context/product/device-profile.md    # only on the user's approval, to update commercial intent
+  - context/commercial/
+  - context/inbox/
 status: draft
 ---
 
@@ -21,9 +22,9 @@ status: draft
 
 Works out where a device is better than the alternatives, for each person who has a say in
 buying it, and turns that into a list of claims the company needs to be able to make. The output
-is a Word document in `outputs/commercial/`, built from the company's template: a draft for
+is a Word document in `context/commercial/`, built from the company's template: a draft for
 review, not a controlled record. Its Claims table is what the regulatory skills read, starting
-with `product-code`: as an unreviewed draft until a person promotes it, as a record after.
+with `product-code`: as an unreviewed draft until its clean copy is made, as a record after.
 
 Read `mos/context-standard.md` before starting if you have not already, then read
 `context/context-map.md` to find out what you are allowed to read.
@@ -73,23 +74,44 @@ that are likely to be expensive, so nobody is surprised.
 
 ### 1. Establish what context exists
 
+**First, the folder layout.** If an `outputs/` folder sits beside `context/`, this company was
+set up before MOS 0.3, when drafts were kept there. Run `python mos/lib/layout.py check` and show
+the user what it lists, with one sentence on why: drafts now sit in `context/` beside the records
+they would revise, and the filename says which is which. On a yes, run
+`python mos/lib/layout.py apply`. For each file it lists as left over, ask whether to delete it,
+move it where the script suggests, or leave it, and pass the answers as `--delete <path>` and
+`--move <path>`. On a no, read and write drafts in `outputs/<domain>/` for this run instead of
+`context/<domain>/`, and say that the next skill will ask again.
+
 Check for `context/context-map.md`.
 
-- **It exists** — read it. Read `context/product/device-profile.md`, especially its commercial
-  intent: the buyer, the value proposition, the claims the founder named and the competitors.
+- **It exists** — read it. Read the target product profile — the newest
+  `target-product-profile_rev*.docx` in `context/product/`, or, unreviewed, `target-product-profile_draft.docx` there — especially its claims and commercial
+  rows: the buyer, the value proposition, the claims the founder named, the competitors, the
+  price and the cost of goods. If there is none, an earlier `setup` put the commercial intent in
+  `context/product/device-profile.md`; read it there, and suggest re-running `setup` to convert
+  it.
   Read whatever the map points at under `commercial/`, and the user needs under
   `users-and-needs/`, which say what clinicians and patients need from the device. Read Word
   documents with `python mos/lib/mosdocx.py read <file>`. Tell the user what you found.
-  - Read the drafts in `outputs/product/`, `outputs/users-and-needs/` and `outputs/commercial/`
-    too, and say that they are unreviewed. A reviewed document outranks a draft; where they
+  - Drafts sit beside the records in each domain, named `_draft`. Read them too, and say that
+    they are unreviewed. A reviewed document outranks a draft; where they
     disagree, say so and ask.
   - If a differentiation analysis exists already, reviewed or draft, its claims have IDs. Ask
     whether this run is to revise it or to start again. Never renumber an existing claim; the
     new draft carries the old IDs forward.
-  - If documents disagree — the pitch deck names one buyer and the device profile another — list
+  - If documents disagree — the pitch deck names one buyer and the target product profile another — list
     the contradictions. Do not pick one.
 - **It does not exist** — say so, and say that running `setup` first will make this skill better.
   Then offer to continue from the conversation alone.
+
+**Offer clean copies of finished drafts.** For each `_draft` this skill reads, ask once:
+*"Is the review of this document finished, and is it ready to route for signature?"* On a yes,
+run `python mos/lib/mosdocx.py clean <file>`, show what it says it will do, and run it again with
+`--apply` on a second yes. It writes the clean copy, `_revA`, without the working notes, and keeps
+the full draft in `archive/`. If it refuses because of tracked changes or comments, say what to do
+in Word first. MOS approves nothing: the clean copy becomes the record when it is signed in the
+company's quality system. A draft that stays a draft is still read, and cited as unreviewed.
 
 Anything you need outside the declared paths, ask for by name and say why. Write the answer back
 to the context map so the question is not asked twice.
@@ -202,38 +224,57 @@ Fill `templates/differentiation.md`. Write dates in the Date format from
 `context/templates/document-settings.md`, if it exists. The search log lists every query sent to
 FDA and to the web, in order. Show the user the complete content. Confirm.
 
-Save the filled template to `outputs/commercial/differentiation.source.md` and run:
+Save the filled template to `context/commercial/differentiation.source.md` and run:
 
 ```
-python mos/lib/mosdocx.py render --in outputs/commercial/differentiation.source.md --out outputs/commercial/differentiation_draft.docx --title "Commercial Differentiation — <device>" --remove-input
+python mos/lib/mosdocx.py render --in context/commercial/differentiation.source.md --out context/commercial/differentiation_draft.docx --title "Commercial Differentiation — <device>" --remove-input
 ```
+
+Where a reviewed `differentiation_rev*.docx` is already there, name the draft for the revision
+after it instead — `differentiation_revB_draft.docx` beside `differentiation_revA.docx` — in the command and
+everything below.
 
 If `differentiation_draft.docx` already exists, the script refuses to overwrite it. Show what
 changed and ask; add `--force` only on a yes. If the script cannot run, write the filled template
-to `outputs/commercial/differentiation.md` instead, and say that Word output needs the step
+to `context/commercial/differentiation_draft.md` instead, and say that Word output needs the step
 in `setup`.
 
-Tell the user how the draft becomes the record: review and redline it in Word, save it with the
-revision in its name — `differentiation_revA.docx` — in `context/commercial/`, or in their quality
-system with the context map pointing at it, then delete the draft from `outputs/commercial/`. A
-promotion moves the document; it is never in two places. Until then, `product-code` still reads
-the draft's claims, and says they are unreviewed.
+Tell the user how the draft becomes the record: review and redline it in Word, then accept or
+reject every change and delete the comments. When the review is finished, make the clean copy: the
+next MOS skill run offers it, or run `python mos/lib/mosdocx.py clean <draft> --apply`. It writes
+`differentiation_revA.docx`, or `_revB` for a `_revB_draft`, without the working notes, and moves the full
+draft, and the revision it replaces, into `archive/`. The clean copy goes for signature, and
+becomes the record when it is signed in the company's quality system. Where the company files
+records there, file it there with the context map pointing at it, and delete the copy from
+`context/commercial/`. Until then, `product-code` still reads the draft's claims, and says they are
+unreviewed.
 
-### 8. Offer to update the device profile
+### 8. Hand off the issues
 
-If the buyer, value proposition, claims or competitors have changed since `setup`, offer to update
-the commercial intent in `context/product/device-profile.md`, each change marked as coming from
-this session. Name the file, show the change, and write only on a yes.
+List what this session found and did not settle: stakeholder answers still `Not known yet`, and the
+customer conversations that would answer them; contradictions between documents; claims whose
+priority nobody would set; and target product profile rows the analysis bears on — a buyer, value
+proposition, claim or competitor that has changed — each with what the row says now and what the
+analysis found. For each, give its type (question, conflict, gap, assumption, risk to the plan), its
+domain, what it blocks and the next step. Check the current issues list — the newest
+`<YYMMDD>_issues-list.docx` in `context/` — and leave out what is already on it, unless this session
+found something new about it.
 
-There is no separate claims record. The claims live in the differentiation document, and every
-skill that needs them reads them there.
+Show the list. On a yes, write it to `context/inbox/<YYMMDD>_issues_differentiation.md`, in the
+format the context standard gives. Then ask the user to run `issues-list` now, while this session
+still holds what was found. Never edit the issues list or the target product profile. If nothing is
+unsettled, say so and write no note.
+
+There is no separate claims record. The target product profile holds the claims the company says
+it needs; the differentiation document holds the analysis of them, with IDs, and every skill that
+needs that analysis reads it there.
 
 ## Working at three levels of context
 
 | What the company has | How this skill behaves |
 |---|---|
 | Nothing | Runs the full interview, explaining why each stakeholder and each alternative matters, and marks every finding as from the conversation or from a search. Most stakeholder answers will be `Not known yet`, and the draft says which customer interviews would answer them |
-| Some files | Starts from the commercial intent in the device profile and any pitch deck or market notes in `commercial/`, interviews for the gaps, and tests the founder's stated differentiation against FDA's records and, if chosen, the web |
+| Some files | Starts from the commercial rows of the target product profile and any pitch deck or market notes in `commercial/`, interviews for the gaps, and tests the founder's stated differentiation against FDA's records and, if chosen, the web |
 | A full document set | Reconciles the existing differentiation analysis, market analysis and user needs, flags claims no longer supported by the differentiation, and flags contradictions between documents rather than resolving them |
 
 ## Interviewing style

@@ -59,8 +59,29 @@ Commands:
       one device by brand name. Brand matching is loose: reports name devices
       inconsistently, so a count by brand is a signal, not a total.
 
-  udi --code CODE [--limit N]
-      Brand names and companies listing devices under a product code in GUDID.
+  problems (--code CODE | --brand NAME [--manufacturer NAME]) [--since YEAR]
+           [--limit N] [--narratives N]
+      What adverse event reports (MAUDE) say went wrong: the device problems and
+      the patient problems reported, each counted, for a product code or a brand.
+      Then, for the most reported problems of each kind, two recent reports'
+      own description of what happened: reports of injury or death first, then
+      any, each with a different narrative. --since counts only reports FDA
+      received from that year on. --limit sets how many problems of each kind are
+      listed (default 25). --narratives sets how many problems of each kind get
+      narratives (default 3; 0 for none). Terms that say nothing about a hazard,
+      such as "Insufficient Information", are counted but never chosen for
+      narratives. For hazard identification, not for rates.
+
+  udi (--code CODE | --number NUMBER | --brand NAME [--manufacturer NAME])
+      [--limit N] [--show N]
+      The Global Unique Device Identification Database (GUDID). With --code,
+      the brand names and companies listing devices under a product code. With
+      --number or --brand, one device's listings: what its labeler recorded
+      across them — prescription or over the counter, sterility and method,
+      single use, latex, MRI safety, storage, product codes, the K, DEN or P
+      numbers it is marketed under — then its models, with sizes. --show sets
+      how many models are listed (default 40). Labelers fill GUDID unevenly; an
+      empty field is "Not stated", not no.
 
   regulation SECTION [--limits]
       The current text of a classification regulation, such as 886.4150, from
@@ -110,7 +131,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-VERSION = '0.1.0'  # a shared contract: a change in behaviour is a new MOS release
+VERSION = '0.3.0'  # a shared contract: a change in behaviour is a new MOS release
 
 API = 'https://api.fda.gov/device/'
 DOCS = 'https://www.accessdata.fda.gov/'
@@ -741,7 +762,118 @@ def cmd_events(a):
     footer()
 
 
+# Problem terms that record no hazard. Counted, never chosen for narratives.
+NO_HAZARD = {t.lower() for t in (
+    'No Clinical Signs, Symptoms or Conditions', 'Insufficient Information',
+    'No Patient Involvement', 'No Known Impact Or Consequence To Patient',
+    'No Consequences Or Impact To Patient', 'No Information', 'No Apparent Adverse Event',
+    "Unknown (for use when the patient's condition is not known)",
+    'Adverse Event Without Identified Device or Use Problem',
+    'Appropriate Term/Code Not Available',
+    'Appropriate Clinical Signs, Symptoms and Conditions Term/Code Not Available',
+    'No Code Available', 'No Known Device Problem',
+    'Unknown')}
+
+
+def exact(t):
+    """One FDA term, matched exactly. Terms carry punctuation, so it is kept."""
+    if '"' in t or '\\' in t:
+        raise Refused('Cannot search for a term containing a quote: %s' % t)
+    return '"%s"' % t.replace(' ', '+')
+
+
+def narrative(r):
+    texts = r.get('mdr_text') or []
+    own = [t.get('text', '') for t in texts
+           if t.get('text_type_code') == 'Description of Event or Problem']
+    return cell(' '.join(own) or (texts[0].get('text', '') if texts else ''), 600)
+
+
+def examples(s, want=2):
+    """The most recent reports for a search, those of injury or death first, each
+    with a different narrative: many reports repeat one template word for word.
+    A report with no narrative is used only when nothing else is found."""
+    out, bare, seen = [], [], set()
+    for harm in ('+AND+(event_type:Injury+event_type:Death)', ''):
+        got, _ = records('event', s + harm, sort='date_received:desc', limit=10)
+        for r in got:
+            key = narrative(r)[:200]
+            if r.get('report_number') in seen or key in seen:
+                continue
+            seen.update((r.get('report_number'), key))
+            (out if key else bare).append(r)
+            if len(out) == want:
+                return out
+    return (out + bare)[:want]
+
+
+def cmd_problems(a):
+    if a.brand:
+        c = 'brand "%s"%s' % (a.brand, ' from "%s"' % a.manufacturer if a.manufacturer else '')
+        s = 'device.brand_name:' + term(a.brand)
+        if a.manufacturer:
+            s += '+AND+device.manufacturer_d_name:' + term(a.manufacturer)
+    else:
+        c = code_search(a.code)
+        s = 'device.device_report_product_code:' + c
+    if a.since:
+        s += '+AND+date_received:[%d0101+TO+29991231]' % a.since
+        c += ', received from %d' % a.since
+    n = total('event', s)
+    kinds = [('Device problem', 'product_problems'), ('Patient problem', 'patient.patient_problems')]
+    counts = {f: query('event', s, count=f + '.exact', limit=min(a.limit, 1000)).get('results', [])
+              for _, f in kinds}
+    if a.json and not a.narratives:
+        print(json.dumps({'counts': counts, 'narratives': []}, indent=2))
+        return
+    if not a.json:
+        print('%d adverse event report%s under %s.' % (n, '' if n == 1 else 's', c))
+    if not n:
+        if a.json:
+            print(json.dumps({'counts': counts, 'narratives': []}, indent=2))
+        else:
+            footer()
+        return
+    stories = {}
+    for label, f in kinds:
+        rows = counts[f]
+        if not a.json:
+            print('\n%ss, by number of reports naming them:' % label)
+            table([label, 'Reports', ''], [(x['term'], x['count'],
+                  'Records no hazard' if x['term'].lower() in NO_HAZARD else '') for x in rows])
+        for x in [x for x in rows if x['term'].lower() not in NO_HAZARD][:a.narratives]:
+            stories[(label, x['term'])] = examples(s + '+AND+%s.exact:%s' % (f, exact(x['term'])))
+    if a.json:
+        print(json.dumps({'counts': counts, 'narratives': [
+            {'kind': k, 'term': t, 'reports': v} for (k, t), v in stories.items()]}, indent=2))
+        return
+    for (label, t), got in stories.items():
+        print('\n%s: %s' % (label, t))
+        for r in got:
+            names = ', '.join(sorted({d.get('brand_name') or '' for d in r.get('device') or []} - {''}))
+            print('- %s, received %s, %s%s. %s' % (r.get('report_number'), ymd(r.get('date_received')),
+                  r.get('event_type') or 'type not stated', ' (%s)' % cell(names, 60) if names else '',
+                  narrative(r) or 'No narrative.'))
+    print('\nA report is an allegation, not a finding. One report can name several problems, '
+          'one manufacturer\'s reporting can dominate a product code\'s counts, and summary '
+          'reporting can bundle many malfunctions into one. Use these to find hazards, not to '
+          'judge how often they happen.')
+    footer()
+
+
+def yes_no(v):
+    return {'true': 'Yes', 'false': 'No'}.get(str(v).lower(), v or 'Not stated')
+
+
+def size(d):
+    if d.get('text'):
+        return d['text']
+    return '%s %s %s' % (d.get('type') or '', d.get('value') or '', d.get('unit') or '')
+
+
 def cmd_udi(a):
+    if not a.code:
+        return udi_device(a)
     c = code_search(a.code)
     rows, n = records('udi', 'product_codes.code:' + c, limit=a.limit)
     if a.json:
@@ -755,6 +887,78 @@ def cmd_udi(a):
           % (n, c, len(rows), len(seen)))
     table(['Company', 'Brand', 'Listings'], [(k[0], k[1], v) for k, v in sorted(seen.items(),
           key=lambda kv: (str(kv[0][0]), str(kv[0][1])))])
+    footer()
+
+
+def udi_device(a):
+    if a.number:
+        n, _ = number_type(a.number)
+        s, what = 'premarket_submissions.submission_number:' + n, n
+    else:
+        s = 'brand_name:' + term(a.brand)
+        what = 'brand "%s"' % a.brand
+        if a.manufacturer:
+            s += '+AND+company_name:' + term(a.manufacturer)
+            what += ' from "%s"' % a.manufacturer
+    rows, n = records('udi', s, limit=a.limit)
+    if a.json:
+        print(json.dumps(rows, indent=2))
+        return
+    print('%d device listing%s in GUDID for %s; %d read. Each listing is one model or package '
+          'as its labeler entered it.' % (n, '' if n == 1 else 's', what, len(rows)))
+    if not rows:
+        footer()
+        return
+
+    def tally(get):
+        out = {}
+        for r in rows:
+            for v in get(r):
+                out[v] = out.get(v, 0) + 1
+        return '; '.join('%s (%d)' % kv for kv in sorted(out.items(), key=lambda kv: -kv[1]))
+
+    one = lambda f: lambda r: [f(r)]
+    st = lambda r: r.get('sterilization') or {}
+    print('\nWhat the labeler recorded, across these listings (count of listings in brackets):')
+    table(['Attribute', 'Values'], [
+        ('Prescription', tally(one(lambda r: yes_no(r.get('is_rx'))))),
+        ('Over the counter', tally(one(lambda r: yes_no(r.get('is_otc'))))),
+        ('Sold sterile', tally(one(lambda r: yes_no(st(r).get('is_sterile'))))),
+        ('Sterilize before use', tally(one(lambda r: yes_no(st(r).get('is_sterilization_prior_use'))))),
+        ('Sterilization method', tally(one(lambda r: st(r).get('sterilization_methods') or 'Not stated'))),
+        ('Single use', tally(one(lambda r: yes_no(r.get('is_single_use'))))),
+        ('Contains natural rubber latex', tally(one(lambda r: yes_no(r.get('is_labeled_as_nrl'))))),
+        ('MRI safety', tally(one(lambda r: r.get('mri_safety') or 'Not stated'))),
+        ('Kit', tally(one(lambda r: yes_no(r.get('is_kit'))))),
+        ('Combination product', tally(one(lambda r: yes_no(r.get('is_combination_product'))))),
+        ('Implantable (GMDN)', tally(lambda r: [yes_no(g.get('implantable'))
+                                                for g in r.get('gmdn_terms') or []] or ['Not stated'])),
+        ('Storage and handling', tally(lambda r: [cell(x.get('special_conditions') or x.get('type'))
+                                                  for x in r.get('storage') or []] or ['Not stated'])),
+        ('Product codes', tally(lambda r: [p.get('code') for p in r.get('product_codes') or []])),
+        ('Premarket submissions', tally(lambda r: [p.get('submission_number')
+                                                   for p in r.get('premarket_submissions') or []]
+                                        or ['None listed'])),
+        ('Commercial distribution', tally(one(lambda r: r.get('commercial_distribution_status')))),
+    ])
+    terms = {}
+    for r in rows:
+        for g in r.get('gmdn_terms') or []:
+            terms[g.get('name')] = g.get('definition')
+    if terms:
+        print('GMDN terms, the international generic names the labeler chose:')
+        for k, v in sorted(terms.items(), key=lambda kv: str(kv[0])):
+            print('- %s: %s' % (k, cell(v)))
+    shown = rows[:a.show]
+    print('\nModels%s:' % ('' if len(shown) == len(rows) else ', the first %d' % len(shown)))
+    table(['Company', 'Brand', 'Model or version', 'Catalog', 'Sizes', 'Description', 'Status'],
+          [(r.get('company_name'), r.get('brand_name'), r.get('version_or_model_number'),
+            r.get('catalog_number'), '; '.join(size(d) for d in r.get('device_sizes') or []),
+            cell(r.get('device_description'), 100), r.get('commercial_distribution_status'))
+           for r in shown])
+    print('GUDID holds what each labeler entered, and labelers fill it unevenly. "Not stated" '
+          'means the field is empty, not that the answer is no. Check anything that matters '
+          'against the labeling.')
     footer()
 
 
@@ -878,8 +1082,23 @@ def main(argv=None):
     s.add_argument('--manufacturer')
     s.add_argument('--json', action='store_true')
 
+    s = sub.add_parser('problems')
+    g = s.add_mutually_exclusive_group(required=True)
+    g.add_argument('--code')
+    g.add_argument('--brand')
+    s.add_argument('--manufacturer')
+    s.add_argument('--since', type=int)
+    s.add_argument('--limit', type=int, default=25)
+    s.add_argument('--narratives', type=int, default=3)
+    s.add_argument('--json', action='store_true')
+
     s = sub.add_parser('udi')
-    s.add_argument('--code', required=True)
+    g = s.add_mutually_exclusive_group(required=True)
+    g.add_argument('--code')
+    g.add_argument('--number')
+    g.add_argument('--brand')
+    s.add_argument('--manufacturer')
+    s.add_argument('--show', type=int, default=40)
     s.add_argument('--limit', type=int, default=200)
     s.add_argument('--json', action='store_true')
 

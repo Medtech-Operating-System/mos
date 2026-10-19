@@ -1,20 +1,21 @@
 ---
 name: precedent-search
 description: Find the marketed devices whose FDA record informs a device's submission, including candidate predicates for a 510(k), the nearest devices and special controls for a De Novo, and earlier approvals and their clinical evidence for a PMA. Use when a team needs to find or test a predicate, show that none exists, or learn what evidence FDA accepted for devices like theirs.
-version: 0.1.0
+version: 0.3.0
 maintainer: Eric Sugalski
 phase: [00-concept, 01-definition, 04-submission]
 discipline: [regulatory]
 reads:
   - context/context-map.md
+  - context/*_issues-list.*
   - context/product/**
   - context/regulatory/**
   - context/commercial/**
   - context/templates/**
 writes:
-  - outputs/regulatory/
+  - context/regulatory/
   - context/regulatory/precedent.md    # only on the user's approval, after a person has chosen
-  - context/product/device-profile.md   # only on the user's approval, to record a predicate
+  - context/inbox/
 status: draft
 ---
 
@@ -25,7 +26,7 @@ means for the submission. For a 510(k), that is candidate **predicates**: the de
 is compared with to show it is as safe and effective. For a De Novo, it is the nearest devices and
 why none of them is a predicate, and the special controls FDA set for similar devices. For a PMA,
 it is earlier approvals and the clinical evidence FDA accepted. The output is a Word document in
-`outputs/regulatory/`, built from the company's template: a draft for review, not a controlled
+`context/regulatory/`, built from the company's template: a draft for review, not a controlled
 record.
 
 Read `mos/context-standard.md` before starting if you have not already, then read
@@ -76,19 +77,31 @@ person owns. Every candidate is labeled a candidate. None is labeled the recomme
 
 ### 1. Establish what context exists
 
+**First, the folder layout.** If an `outputs/` folder sits beside `context/`, this company was
+set up before MOS 0.3, when drafts were kept there. Run `python mos/lib/layout.py check` and show
+the user what it lists, with one sentence on why: drafts now sit in `context/` beside the records
+they would revise, and the filename says which is which. On a yes, run
+`python mos/lib/layout.py apply`. For each file it lists as left over, ask whether to delete it,
+move it where the script suggests, or leave it, and pass the answers as `--delete <path>` and
+`--move <path>`. On a no, read and write drafts in `outputs/<domain>/` for this run instead of
+`context/<domain>/`, and say that the next skill will ask again.
+
 Check for `context/context-map.md`.
 
 - **It exists** — read it. Read, weighing each by the order of trust in the context standard:
   - **The product code.** `context/regulatory/classification.md`, if a person has chosen one. If
-    not, a product code analysis in `context/regulatory/` or, unreviewed, in `outputs/regulatory/`.
+    not, a product code analysis in `context/regulatory/`, reviewed or draft.
     From a draft, say which code it leaned toward and ask the user to confirm it before searching.
-  - **The device.** `context/product/device-profile.md`: intended use, indications for use,
-    contraindications, how it works, patient contact, users and setting.
-  - **The claims.** The differentiation analysis in `context/commercial/` or, unreviewed,
-    `outputs/commercial/`. Its must-have claims are checked against each candidate in step 8.
+  - **The device.** The target product profile — the newest `target-product-profile_rev*.docx`
+    in `context/product/`, or, unreviewed, `target-product-profile_draft.docx` there:
+    intended use, indications for use, contraindications, how it works, patient contact, users
+    and setting, and its claims. If there is none, an earlier `setup` put these in
+    `context/product/device-profile.md`; read them there, and suggest re-running `setup` to
+    convert it.
+  - **The claims.** The differentiation analysis in `context/commercial/`, reviewed or draft. Its must-have claims are checked against each candidate in step 8.
   - **Earlier work.** `context/regulatory/precedent.md`, if a predicate has been chosen before; an
     earlier precedent search, reviewed or draft; and any predicate the company has named — in the
-    device profile, a regulatory strategy, or the conversation.
+    target product profile, a regulatory strategy, or the conversation.
 
   Read Word documents with `python mos/lib/mosdocx.py read <file>`. Tell the user what you found and
   which of it is unreviewed. List contradictions; do not resolve them.
@@ -98,6 +111,14 @@ Check for `context/context-map.md`.
 
 **Without a product code, stop and say so.** Offer the `product-code` skill, or take a code the user
 gives and test it with `openfda.py code` before relying on it.
+
+**Offer clean copies of finished drafts.** For each `_draft` this skill reads, ask once:
+*"Is the review of this document finished, and is it ready to route for signature?"* On a yes,
+run `python mos/lib/mosdocx.py clean <file>`, show what it says it will do, and run it again with
+`--apply` on a second yes. It writes the clean copy, `_revA`, without the working notes, and keeps
+the full draft in `archive/`. If it refuses because of tracked changes or comments, say what to do
+in Word first. MOS approves nothing: the clean copy becomes the record when it is signed in the
+company's quality system. A draft that stays a draft is still read, and cited as unreviewed.
 
 Anything you need outside the declared paths, ask for by name and say why.
 
@@ -172,7 +193,7 @@ From the longlist, choose **five to ten** to read in full: the closest by name a
 most recent. Download their summaries, ten at most per call:
 
 ```
-python mos/lib/openfda.py fetch K212763 K220030 K170183 --out outputs/regulatory/summaries
+python mos/lib/openfda.py fetch K212763 K220030 K170183 --out context/regulatory/summaries
 ```
 
 **If you cannot read PDF files**, say so plainly. List the summaries the user should read, and tell
@@ -370,7 +391,7 @@ The classification paragraph takes one of three forms. Say which:
 controls guidance where there is one. Save and read the ones that bear on the device:
 
 ```
-python mos/lib/openfda.py guidance https://www.fda.gov/regulatory-information/search-fda-guidance-documents/... --out outputs/regulatory/guidance
+python mos/lib/openfda.py guidance https://www.fda.gov/regulatory-information/search-fda-guidance-documents/... --out context/regulatory/guidance
 ```
 
 It downloads the PDF where FDA offers one. Many older guidance documents are published as the web
@@ -395,7 +416,7 @@ checked against FDA's current recognition.
 2. **Cited by the candidates.** The testing sections of the summaries read in step 5 name the
    standards each predicate was tested to. Those are strong evidence of what FDA expects.
 3. **Triggered by the device's characteristics.** General standards are not listed by product code.
-   From the device profile, look up the ones that apply:
+   From the target product profile's description of the device, look up the ones that apply:
 
    | If the device | Look up |
    |---|---|
@@ -467,7 +488,7 @@ Say plainly that whether a De Novo is the right route is a question for a Pre-Su
 
 ```
 python mos/lib/openfda.py pma --code ABC --limit 50
-python mos/lib/openfda.py fetch P210015 --out outputs/regulatory/summaries
+python mos/lib/openfda.py fetch P210015 --out context/regulatory/summaries
 ```
 
 For the closest approvals, read the **summary of safety and effectiveness data** (SSED) and record
@@ -482,21 +503,29 @@ Fill `templates/precedent-search.md`, keeping only the sections that apply to th
 dates in the Date format from `context/templates/document-settings.md`, if it exists. The search log
 lists every query in order. Show the user the complete content. Confirm.
 
-Save the filled template to `outputs/regulatory/precedent-search.source.md` and run:
+Save the filled template to `context/regulatory/precedent-search.source.md` and run:
 
 ```
-python mos/lib/mosdocx.py render --in outputs/regulatory/precedent-search.source.md --out outputs/regulatory/precedent-search_draft.docx --title "Precedent Search — <device>" --remove-input
+python mos/lib/mosdocx.py render --in context/regulatory/precedent-search.source.md --out context/regulatory/precedent-search_draft.docx --title "Precedent Search — <device>" --remove-input
 ```
+
+Where a reviewed `precedent-search_rev*.docx` is already there, name the draft for the revision
+after it instead — `precedent-search_revB_draft.docx` beside `precedent-search_revA.docx` — in the command and
+everything below.
 
 If `precedent-search_draft.docx` already exists, the script refuses to overwrite it. Show what
 changed and ask; add `--force` only on a yes. If the script cannot run, write the filled template to
-`outputs/regulatory/precedent-search.md` instead, and say that Word output needs the step in
+`context/regulatory/precedent-search_draft.md` instead, and say that Word output needs the step in
 `setup`.
 
-Tell the user how the draft becomes the record: review and redline it in Word, save it with the
-revision in its name — `precedent-search_revA.docx` — in `context/regulatory/`, or in the quality
-system with the map pointing at it, then delete the draft from `outputs/regulatory/`. Until then,
-later skills read the draft and say it is unreviewed.
+Tell the user how the draft becomes the record: review and redline it in Word, then accept or
+reject every change and delete the comments. When the review is finished, make the clean copy: the
+next MOS skill run offers it, or run `python mos/lib/mosdocx.py clean <draft> --apply`. It writes
+`precedent-search_revA.docx`, or `_revB` for a `_revB_draft`, without the working notes, and moves the full
+draft, and the revision it replaces, into `archive/`. The clean copy goes for signature, and
+becomes the record when it is signed in the company's quality system. Where the company files
+records there, file it there with the context map pointing at it, and delete the copy from
+`context/regulatory/`. Until then, later skills read the draft and say it is unreviewed.
 
 ### 15. Offer to record the decision
 
@@ -506,14 +535,28 @@ secondary ones for a 510(k), or the position that no predicate exists — fill
 records who chose, when, and the technological differences from the chosen predicate. Show it in
 full; write only on a yes. If nobody has chosen yet, say the record waits until they have.
 
-If the device profile names a predicate that differs from the one chosen, offer to update it.
+### 16. Hand off the issues
+
+List what this session found and did not settle: gates that stayed unclear; contradictions between
+documents; requirements left open; the choice of predicate, if nobody has made it yet; and target
+product profile rows the search bears on — a predicate the company named and the search set aside
+or the person did not choose, an expected pathway the search does not support, a claim no candidate
+carries — each with what the row says now and what the search found. For each, give its type
+(question, conflict, gap, assumption, risk to the plan), its domain, what it blocks and the next
+step. Check the current issues list — the newest `<YYMMDD>_issues-list.docx` in `context/` — and
+leave out what is already on it, unless this session found something new about it.
+
+Show the list. On a yes, write it to `context/inbox/<YYMMDD>_issues_precedent-search.md`, in the
+format the context standard gives. Then ask the user to run `issues-list` now, while this session
+still holds what was found. Never edit the issues list or the target product profile. If nothing is
+unsettled, say so and write no note.
 
 ## Working at three levels of context
 
 | What the company has | How this skill behaves |
 |---|---|
 | Nothing | Asks for the product code and indications, tests the code before relying on it, and runs Discover. Explains each step in plain words — what a predicate is, why intended use is a gate. Every statement about the device is marked as from the conversation |
-| Some files | Starts from the classification record or the product code draft, the device profile and any differentiation draft; says which are unreviewed; interviews only for the gaps. Runs Vet when the company has named a predicate |
+| Some files | Starts from the classification record or the product code draft, the target product profile and any differentiation draft; says which are unreviewed; interviews only for the gaps. Runs Vet when the company has named a predicate |
 | A full document set | Tests the chosen predicate against FDA's current record: new recalls, a newer and closer clearance, a finalized guidance. Flags contradictions between the precedent record, the indications and the claims rather than resolving them |
 
 ## Interviewing style

@@ -8,28 +8,29 @@ MOS skill. Anything not listed is invisible to them.** Edit it by hand whenever 
 
 Line types: a path (optionally followed by ` — note`), `exclude:` for a pattern inside a mapped
 path that skills skip, and `restricted:` for material that exists and is not to be read. `archive/`
-is excluded everywhere by default and does not need a line.
+is excluded everywhere by default and does not need a line. MOS writes its drafts only to the
+`./context/` folders, never to a path elsewhere, so each domain lists its local folder.
 
 ## product
-- `./context/product/`
+- `./context/product/` — MOS drafts
 
 ## users-and-needs
-- not mapped yet
+- `./context/users-and-needs/` — MOS drafts
 
 ## risk
-- not mapped yet
+- `./context/risk/` — MOS drafts
 
 ## design
-- not mapped yet
+- `./context/design/` — MOS drafts
 
 ## manufacturing
-- not mapped yet
+- `./context/manufacturing/` — MOS drafts
 
 ## clinical
-- not mapped yet
+- `./context/clinical/` — MOS drafts
 
 ## regulatory
-- not mapped yet
+- `./context/regulatory/` — MOS drafts
 
 ## commercial
-- not mapped yet
+- `./context/commercial/` — MOS drafts

@@ -39,7 +39,39 @@ Commands:
 
   read FILE.docx
       Print a Word document as text, for a skill to read. Tracked changes are
-      shown as if accepted, and counted at the top so the reader knows.
+      shown as if accepted, and counted at the top so the reader knows. Review
+      comments are listed at the end, each with its author, date and the text
+      it is attached to: a reviewer's comment is often the change.
+
+  clean FILE_draft.docx [--rev REV] [--settings PATH] [--register PATH] [--apply]
+      Make the clean copy of a reviewed draft: the one that goes for
+      signature in the company's quality system. Refuses while the draft has tracked
+      changes or review comments, or is open in Word. Writes <document>_revA.docx
+      (or the revision a _revB_draft names) without the working notes, sets the
+      [Rev] placeholder, and moves the full draft, notes and all, to archive/
+      as <document>_revA_draft.docx, with the revision it replaces. Without
+      --apply it says what it would do and changes nothing.
+
+  register [--register PATH] [--apply]
+      Bring the document register up to date with the documents already in
+      context/<domain>/: list each one not on it, with the number it would get.
+      With --apply, add them, and put the number on each draft's cover where it
+      still shows [Document Number]. A record is never changed; its number goes
+      on at its next revision.
+
+The document register, context/document-register.md, lists every document MOS
+writes: its number, title, file, revision, status and date. render gives a new
+document the next number for its domain's prefix (DIR-001, REG-002) and puts it
+on the cover; a document keeps its number across all its revisions. clean
+records each new revision. Where the register says "Numbering: Quality system",
+MOS assigns no numbers: the company enters the number its own system gave, and
+MOS uses it from then on. Without a register, nothing is numbered.
+
+Working notes: a "## Working Notes" heading in a draft starts the material its
+reviewers need and the copy for signature does not, such as what was set aside and
+challenges confirmed. render puts it on a new page under a banner saying so, in
+italics; it must be the draft's last section, since clean removes everything
+from it to the end.
 
 Document settings are a short Markdown file of "Key: value" lines, written by
 the setup skill. Every document is built from them, which is what keeps a
@@ -75,10 +107,11 @@ import zipfile
 import xml.etree.ElementTree as ET
 from xml.sax.saxutils import escape
 
-VERSION = '0.2.0'  # a shared contract: a change in behaviour is a new MOS release
+VERSION = '0.5.0'  # a shared contract: a change in behaviour is a new MOS release
 
 DEFAULT_TEMPLATE = os.path.join('context', 'templates', 'document-template.docx')
 DEFAULT_SETTINGS = os.path.join('context', 'templates', 'document-settings.md')
+DEFAULT_REGISTER = os.path.join('context', 'document-register.md')
 
 SETTINGS = {
     'company': '',
@@ -478,6 +511,10 @@ def build_template(settings, logo_bytes=None):
 
 INLINE = re.compile(r'\*\*(.+?)\*\*|`([^`]+)`|(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])|\[([^\]]+)\]\(([^)]+)\)|<br\s*/?>')
 ID_HYPHEN = re.compile(r'(?<=\b[A-Z]{2})-(?=\d)|(?<=\b[A-Z]{3})-(?=\d)|(?<=\b[A-Z]{4})-(?=\d)')
+WORKING_NOTES = re.compile(r'working notes\b', re.I)
+NOTES_BANNER = ('Working notes: removed from the clean copy. Everything from here to the end shows how this '
+                'draft was built and what was set aside, for its reviewers. When the document is '
+                'ready for signature, the clean copy leaves it out, and the full draft is kept in archive/.')
 # "Primary users: ..." — up to five words and a colon at the start of a line.
 LABEL = re.compile(r"^([A-Z][\w()/'’,.-]*(?: [\w()/'’,.-]+){0,4}:)(?= )")
 
@@ -624,6 +661,8 @@ def parse_blocks(md):
             style = 'Title' if level == 1 else 'Heading%d' % min(level - 1, 3)
             text = m.group(2).strip()
             extra = '<w:pageBreakBefore/>' if level == 2 and text.lower().startswith('appendix') else ''
+            if level == 2 and WORKING_NOTES.match(text):
+                extra = '<w:pageBreakBefore/>'
             blocks.append(('heading', para(runs(text), style, extra), level))
             i += 1
             continue
@@ -694,7 +733,27 @@ def parse_blocks(md):
             else:
                 groups[-1].append(c)
         blocks.append(('block', ''.join(label_para(' '.join(g)) for g in groups), None))
-    return blocks
+    return working_notes(blocks)
+
+
+def working_notes(blocks):
+    """Everything from a "## Working Notes" heading to the end is working material: the
+    banner under the heading says so, and it is set in italics. clean removes it."""
+    n = next((i for i, b in enumerate(blocks)
+              if b[0] == 'heading' and b[2] == 2 and WORKING_NOTES.match(_text(ET.fromstring(
+                  '<root %s>%s</root>' % (XMLNS, b[1]))))), None)
+    if n is None:
+        return blocks
+    banner = ('block', para(runs(NOTES_BANNER)), None)
+    return blocks[:n + 1] + [(k, italicize(x), m) for k, x, m in [banner] + blocks[n + 1:]]
+
+
+def italicize(xml):
+    """Every run in a piece of body XML, set in italics. <w:i/> goes after any font and
+    bold, the order Word's schema requires."""
+    xml = re.sub(r'<w:r>(?!<w:rPr>)', '<w:r><w:rPr><w:i/></w:rPr>', xml)
+    return re.sub(r'<w:r><w:rPr>((?:<w:rFonts[^>]*/>)?(?:<w:b/>)?)(?!<w:i/>)',
+                  r'<w:r><w:rPr>\1<w:i/>', xml)
 
 
 def section_props(base, landscape, first=True):
@@ -855,15 +914,15 @@ def read(docx_bytes):
     root = ET.fromstring(xml)
     ins = len(root.findall('.//w:ins', NS))
     dels = len(root.findall('.//w:del', NS))
-    comments = 0
+    comments = []
     if 'word/comments.xml' in names:
-        comments = len(ET.fromstring(z.read('word/comments.xml')).findall('w:comment', NS))
+        comments = ET.fromstring(z.read('word/comments.xml')).findall('w:comment', NS)
     out = []
     if ins or dels:
         out.append('> Tracked changes: %d insertions, %d deletions, not accepted in the file. '
                    'Shown here as if accepted.' % (ins, dels))
     if comments:
-        out.append('> Review comments: %d. Not shown.' % comments)
+        out.append('> Review comments: %d. Listed at the end.' % len(comments))
     for name in sorted(n for n in names if re.match(r'word/header\d*\.xml$', n)):
         htext = [_block_text(el) for el in ET.fromstring(z.read(name))]
         htext = [t for t in htext if t.strip()]
@@ -874,7 +933,354 @@ def read(docx_bytes):
         t = _block_text(el)
         if t.strip():
             out.append(t)
+    if comments:
+        anchors = _comment_anchors(root)
+        lines = ['## Review comments']
+        for c in comments:
+            who = c.get(W + 'author') or 'Unknown'
+            when = (c.get(W + 'date') or '')[:10]
+            said = ' '.join(' '.join(_text(p).split()) for p in c.findall('w:p', NS)).strip()
+            on = ' '.join(anchors.get(c.get(W + 'id'), '').split())
+            lines.append('- %s%s%s: %s' % (who, ', ' + when if when else '',
+                                           ', on "%s"' % on if on else '', said))
+        out.append('\n'.join(lines))
     return '\n\n'.join(out) + '\n'
+
+
+def _comment_anchors(root):
+    """The text each comment is attached to: everything between its range start and end."""
+    active, text = set(), {}
+    for node in root.iter():
+        if node.tag == W + 'commentRangeStart':
+            active.add(node.get(W + 'id'))
+        elif node.tag == W + 'commentRangeEnd':
+            active.discard(node.get(W + 'id'))
+        elif node.tag == W + 't' and active:
+            for cid in active:
+                text[cid] = text.get(cid, '') + (node.text or '')
+    return text
+
+
+# ---- register ---------------------------------------------------------------
+
+REGISTER_COLUMNS = ['Number', 'Title', 'File', 'Revision', 'Status', 'Date']
+
+
+def has_number(value):
+    value = (value or '').strip()
+    return bool(value) and value not in ('-', '—') and not value.startswith('[')
+
+
+def doc_key(path):
+    """(domain, document) for a Word file directly in context/<domain>/, the same for a
+    document's draft, its records and its next draft; None for anything else, such as
+    archive/ or the issues list."""
+    parts = os.path.abspath(path).replace('\\', '/').split('/')
+    if 'context' not in parts:
+        return None
+    rest = parts[len(parts) - parts[::-1].index('context'):]
+    m = len(rest) == 2 and (DRAFT_NAME.match(rest[1]) or RECORD_NAME.match(rest[1]))
+    return (rest[0].lower(), m.group('base').lower()) if m else None
+
+
+class Register:
+    """context/document-register.md: each document MOS writes, with its number, file,
+    revision and status. Everything above the Documents table is the company's to edit,
+    and is kept as written; the table is rewritten in number order."""
+
+    def __init__(self, path, text):
+        self.path, self.text = path, text
+        self.root = os.path.dirname(os.path.dirname(os.path.abspath(path)))
+        m = re.search(r'^\W*Numbering\W*:\s*(.+?)\s*$', text, re.M | re.I)
+        self.numbering = 'quality system' if m and 'quality' in m.group(1).lower() else 'mos'
+        lines, a, b = self._span('Prefixes')
+        self.prefixes = {}
+        for line in (lines[a:b][2:] if a is not None else []):
+            c = split_row(line)
+            if len(c) >= 2 and c[1].strip('`'):
+                self.prefixes[c[0].strip('`').lower()] = c[1].strip('`')
+        lines, a, b = self._span('Documents')
+        self.rows = []
+        if a is not None and b - a >= 2:
+            head = split_row(lines[a])
+            for line in lines[a + 2:b]:
+                row = dict(zip(head, split_row(line)))
+                self.rows.append({c: row.get(c, '').strip('`') for c in REGISTER_COLUMNS})
+
+    @classmethod
+    def load(cls, path):
+        if not path or not os.path.exists(path):
+            return None
+        with open(path, encoding='utf-8') as f:
+            return cls(path, f.read())
+
+    def _span(self, heading):
+        lines = self.text.replace('\r\n', '\n').split('\n')
+        h = next((i for i, l in enumerate(lines) if re.match(r'^##\s+%s\s*$' % heading, l, re.I)), None)
+        if h is None:
+            return lines, None, None
+        a = next((i for i in range(h + 1, len(lines)) if lines[i].strip()), len(lines))
+        if a >= len(lines) or not lines[a].strip().startswith('|'):
+            return lines, h + 1, h + 1
+        b = a
+        while b < len(lines) and lines[b].strip().startswith('|'):
+            b += 1
+        return lines, a, b
+
+    def rel(self, path):
+        return os.path.relpath(os.path.abspath(path), self.root).replace('\\', '/')
+
+    def find(self, key):
+        return next((row for row in self.rows if doc_key(os.path.join(self.root, row['File'])) == key), None)
+
+    def next_number(self, domain):
+        prefix = self.prefixes.get(domain)
+        if self.numbering != 'mos' or not prefix:
+            return None
+        used = [int(m.group(1)) for row in self.rows
+                for m in [re.fullmatch(re.escape(prefix) + r'-(\d+)', row['Number'])] if m]
+        return '%s-%03d' % (prefix, max(used + [0]) + 1)
+
+    def number_for(self, path):
+        """The number a document has, or would get as the next one; None if neither."""
+        key = doc_key(path)
+        if not key:
+            return None
+        row = self.find(key)
+        if row:
+            return row['Number'] if has_number(row['Number']) else None
+        return self.next_number(key[0])
+
+    def record(self, path, title, rev, status, date, number=None, old=None):
+        """Add or update the row for a document. old: the file it was at before."""
+        key = doc_key(old or path) or doc_key(path)
+        row = self.find(key)
+        if row is None:
+            row = dict.fromkeys(REGISTER_COLUMNS, '')
+            row['Number'] = number or self.next_number(key[0]) or '—'
+            row['Revision'] = '—'
+            self.rows.append(row)
+        elif number and not has_number(row['Number']):
+            row['Number'] = number
+        row['File'] = self.rel(path)
+        if title:
+            row['Title'] = title
+        if rev:
+            row['Revision'] = rev
+        row['Status'], row['Date'] = status, date
+        return row
+
+    def save(self):
+        order = lambda row: (not has_number(row['Number']), row['Number'], row['File'])
+        cell = lambda v: (v or '').replace('|', '\\|')
+        table = ['| %s |' % ' | '.join(REGISTER_COLUMNS), '|' + '---|' * len(REGISTER_COLUMNS)]
+        table += ['| %s |' % ' | '.join(cell(row[c]) for c in REGISTER_COLUMNS)
+                  for row in sorted(self.rows, key=order)]
+        lines, a, b = self._span('Documents')
+        if a is None:
+            lines += ['', '## Documents', ''] + table
+        else:
+            lines[a:b] = table
+        self.text = '\n'.join(lines).rstrip('\n') + '\n'
+        with open(self.path, 'w', encoding='utf-8') as f:
+            f.write(self.text)
+
+
+def stamp_number(docx_bytes, number):
+    """A draft with the [Document Number] placeholder on its cover, footer and header set."""
+    zin = zipfile.ZipFile(io.BytesIO(docx_bytes))
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zout:
+        for item in zin.infolist():
+            data = zin.read(item.filename)
+            if item.filename == 'word/document.xml' or re.match(r'word/(header|footer)\d*\.xml$', item.filename):
+                data = data.decode('utf-8').replace(escape(TOKENS['document_number']), escape(number)).encode('utf-8')
+            zout.writestr(item, data)
+    return buf.getvalue()
+
+
+def register_plan(reg):
+    """Documents in context/<domain>/ not yet on the register: (path, status, rev, number)."""
+    found = {}
+    context = os.path.join(reg.root, 'context')
+    for domain in (sorted(os.listdir(context)) if os.path.isdir(context) else []):
+        folder = os.path.join(context, domain)
+        if not os.path.isdir(folder):
+            continue
+        for name in sorted(os.listdir(folder)):
+            path = os.path.join(folder, name)
+            key = doc_key(path)
+            if key and not name.startswith('~$') and reg.find(key) is None:
+                found.setdefault(key, []).append(path)
+    plan, taken = [], {}
+    for key, paths in sorted(found.items()):
+        drafts = [p for p in paths if DRAFT_NAME.match(os.path.basename(p))]
+        records = sorted((RECORD_NAME.match(os.path.basename(p)).group('rev'), p)
+                         for p in paths if RECORD_NAME.match(os.path.basename(p)))
+        path = drafts[0] if drafts else records[-1][1]
+        rev = records[-1][0] if records else None
+        if drafts:
+            proposed = DRAFT_NAME.match(os.path.basename(path)).group('rev')
+            status = 'Draft of rev %s' % proposed if proposed else 'Draft'
+        else:
+            status = 'Clean copy, for signature'
+        number = reg.next_number(key[0])
+        if number:  # count the numbers this plan has already handed out
+            prefix, n = number.rsplit('-', 1)
+            taken[prefix] = taken.get(prefix, int(n) - 1) + 1
+            number = '%s-%03d' % (prefix, taken[prefix])
+        plan.append((path, status, rev, number))
+    return plan
+
+
+# ---- clean ------------------------------------------------------------------
+
+DRAFT_NAME = re.compile(r'^(?P<base>.+?)(?:_rev(?P<rev>[A-Za-z]+|\d+))?_draft\.docx$', re.I)
+RECORD_NAME = re.compile(r'^(?P<base>.+?)_rev(?P<rev>[A-Za-z]+|\d+)\.docx$', re.I)
+CHANGES = re.compile(r'<w:(ins|del|moveFrom|moveTo|rPrChange|pPrChange|sectPrChange|tblPrChange'
+                     r'|trPrChange|tcPrChange|numberingChange)\b')
+PARA = re.compile(r'<w:p\b[^>]*>.*?</w:p>|<w:p\b[^>]*/>', re.S)
+
+
+def unaccepted(docx_bytes):
+    """(tracked changes, review comments) a document still carries."""
+    z = zipfile.ZipFile(io.BytesIO(docx_bytes))
+    changes = 0
+    for name in z.namelist():
+        if name == 'word/document.xml' or re.match(r'word/(header|footer)\d*\.xml$', name):
+            changes += len(CHANGES.findall(z.read(name).decode('utf-8')))
+    comments = 0
+    if 'word/comments.xml' in z.namelist():
+        comments = len(ET.fromstring(z.read('word/comments.xml')).findall('w:comment', NS))
+    return changes, comments
+
+
+def strip_notes(doc):
+    """document.xml without its working notes: everything from the "Working Notes"
+    heading to the end of the body. Returns (xml, whether there were notes)."""
+    end = doc.rfind('<w:sectPr')
+    start = None
+    for m in PARA.finditer(doc, 0, end):
+        if 'w:val="Heading1"' in m.group(0) and WORKING_NOTES.match(
+                _text(ET.fromstring('<root %s>%s</root>' % (XMLNS, m.group(0)))).strip()):
+            before = doc[:m.start()]
+            if before.count('<w:tbl>') + before.count('<w:tbl ') == before.count('</w:tbl>'):
+                start = m.start()  # a heading in the body, not in a table
+                break
+    if start is None:
+        return doc, False
+    kept, final = doc[:start], doc[end:]
+    # A landscape table just before the notes ends its section with a section break. With
+    # the notes gone, that section is the last: its properties become the body's.
+    last = list(PARA.finditer(kept))
+    if last and last[-1].end() == len(kept.rstrip()) and '<w:sectPr' in last[-1].group(0) \
+            and not _text(ET.fromstring('<root %s>%s</root>' % (XMLNS, last[-1].group(0)))).strip():
+        sect = re.search(r'<w:sectPr\b.*?</w:sectPr>', last[-1].group(0), re.S).group(0)
+        kept = kept[:last[-1].start()]
+        final = sect + final[final.find('</w:sectPr>') + len('</w:sectPr>'):]
+    # A bookmark that began before the notes and ended inside them is closed here.
+    out = kept + final
+    for bid in re.findall(r'<w:bookmarkStart\b[^>]*w:id="(\d+)"', out):
+        if not re.search(r'<w:bookmarkEnd\b[^>]*w:id="%s"' % bid, out):
+            out = re.sub(r'<w:bookmarkStart\b[^>]*w:id="%s"[^>]*/>' % bid, '', out)
+    return out, True
+
+
+def clean_bytes(docx_bytes, rev, number=None):
+    """The clean copy: working notes removed, and the [Rev] placeholder on the
+    cover, footer and header set to rev. Returns (bytes, had notes, placeholders left)."""
+    zin = zipfile.ZipFile(io.BytesIO(docx_bytes))
+    buf = io.BytesIO()
+    notes = False
+    left = set()
+    with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zout:
+        for item in zin.infolist():
+            data = zin.read(item.filename)
+            name = item.filename
+            if name == 'word/document.xml' or re.match(r'word/(header|footer)\d*\.xml$', name):
+                text = data.decode('utf-8')
+                if name == 'word/document.xml':
+                    text, notes = strip_notes(text)
+                text = text.replace(TOKENS['revision'], escape(rev))
+                if number:
+                    text = text.replace(escape(TOKENS['document_number']), escape(number))
+                for key in ('document_number', 'related_documents'):
+                    if escape(TOKENS[key]) in text:
+                        left.add(TOKENS[key])
+                data = text.encode('utf-8')
+            zout.writestr(item, data)
+    return buf.getvalue(), notes, sorted(left)
+
+
+def clean_plan(path, rev=None, settings=DEFAULT_SETTINGS, register=DEFAULT_REGISTER):
+    """What cleaning a draft would do, as a dict, or MosDocxError saying why it cannot."""
+    folder, name = os.path.split(path)
+    folder = folder or '.'
+    m = DRAFT_NAME.match(name)
+    if not m:
+        raise MosDocxError('%s is not a draft. Clean a file named <document>_draft.docx or '
+                           '<document>_revB_draft.docx.' % name)
+    if not os.path.isfile(path):
+        raise MosDocxError('%s not found.' % path)
+    base = m.group('base')
+    locks = [f for f in os.listdir(folder) if f.startswith('~$') and name.endswith(f[2:])]
+    if locks:
+        raise MosDocxError('%s is open in Word. Save and close it, then clean it.' % name)
+    records = sorted((r.group('rev'), r.group(0)) for r in map(RECORD_NAME.match, os.listdir(folder))
+                     if r and r.group('base') == base)
+    proposed = m.group('rev')
+    previous = None
+    if proposed:
+        if rev and rev != proposed:
+            raise MosDocxError('the draft names revision %s; --rev %s disagrees.' % (proposed, rev))
+        rev = proposed
+        same = [f for r, f in records if r.upper() == rev.upper()]
+        if same:
+            raise MosDocxError('%s already exists beside the draft. Not overwritten.' % same[0])
+        if len(records) > 1:
+            raise MosDocxError('more than one record of %s sits outside archive/: %s. Archive the '
+                               'older ones first.' % (base, ', '.join(f for _, f in records)))
+        previous = records[0][1] if records else None
+    else:
+        if records:
+            raise MosDocxError('%s sits beside %s, so the draft does not say which revision it '
+                               'proposes. Rename it %s_rev<next>_draft.docx.' % (name, records[-1][1], base))
+        if not rev:
+            first = load_settings(settings)['first revision'] if os.path.exists(settings) else ''
+            rev = first if first and not first.startswith('[') else 'A'
+    archive = os.path.join(folder, 'archive')
+    archived = os.path.join(archive, '%s_rev%s_draft.docx' % (base, rev))
+    for target in [archived] + ([os.path.join(archive, previous)] if previous else []):
+        if os.path.exists(target):
+            raise MosDocxError('%s already exists. Not overwritten.' % target)
+    with open(path, 'rb') as f:
+        data = f.read()
+    changes, comments = unaccepted(data)
+    if changes or comments:
+        raise MosDocxError('%s still has %d tracked change%s and %d review comment%s. Accept or '
+                           'reject every change and delete the comments in Word, then clean it: '
+                           'a copy for signature carries neither.'
+                           % (name, changes, '' if changes == 1 else 's', comments, '' if comments == 1 else 's'))
+    reg = Register.load(register)
+    number = reg.number_for(path) if reg else None
+    out, notes, left = clean_bytes(data, rev, number)
+    return {'draft': path, 'record': os.path.join(folder, '%s_rev%s.docx' % (base, rev)), 'rev': rev,
+            'archived': archived, 'previous': os.path.join(folder, previous) if previous else None,
+            'notes': notes, 'placeholders': left, 'bytes': out, 'number': number}
+
+
+def clean_apply(plan, settings=DEFAULT_SETTINGS, register=DEFAULT_REGISTER):
+    _write(plan['record'], plan['bytes'], False)
+    reg = Register.load(register)
+    if reg:
+        reg.record(plan['record'], None, plan['rev'], 'Clean copy, for signature',
+                   format_date(load_settings(settings)), old=plan['draft'])
+        reg.save()
+    os.makedirs(os.path.dirname(plan['archived']), exist_ok=True)
+    if plan['previous']:
+        os.replace(plan['previous'], os.path.join(os.path.dirname(plan['archived']),
+                                                  os.path.basename(plan['previous'])))
+    os.replace(plan['draft'], plan['archived'])
 
 
 # ---- command line -----------------------------------------------------------
@@ -910,8 +1316,18 @@ def main(argv=None):
     r.add_argument('--set', action='append', default=[], metavar='KEY=VALUE')
     r.add_argument('--remove-input', action='store_true')
     r.add_argument('--force', action='store_true')
+    r.add_argument('--register', default=DEFAULT_REGISTER)
     rd = sub.add_parser('read')
     rd.add_argument('file')
+    pr = sub.add_parser('clean')
+    pr.add_argument('file')
+    pr.add_argument('--rev')
+    pr.add_argument('--settings', default=DEFAULT_SETTINGS)
+    pr.add_argument('--apply', action='store_true')
+    pr.add_argument('--register', default=DEFAULT_REGISTER)
+    rg = sub.add_parser('register')
+    rg.add_argument('--register', default=DEFAULT_REGISTER)
+    rg.add_argument('--apply', action='store_true')
     a = p.parse_args(argv)
 
     try:
@@ -919,6 +1335,10 @@ def main(argv=None):
             tpl = build_template(dict(SETTINGS, company='Check', header='On'))
             doc, _ = render('# Check\n\n| a | b |\n|---|---|\n| 1 | 2 |\n', tpl, {'document_name': 'Check'})
             assert '| 1 | 2 |' in read(doc)
+            doc, _ = render('# Check\n\n## Body\n\nKept.\n\n## Working Notes\n\nGone.\n', tpl,
+                            {'document_name': 'Check'})
+            out, notes, _ = clean_bytes(doc, 'A')
+            assert notes and 'Kept.' in read(out) and 'Gone.' not in read(out)
             print('mosdocx %s ok: Python %d.%d can write and read Word documents.'
                   % ((VERSION,) + sys.version_info[:2]))
         elif a.cmd == 'template':
@@ -964,8 +1384,23 @@ def main(argv=None):
                 if key not in TOKENS:
                     raise MosDocxError('unknown field "%s". Known: %s' % (key, ', '.join(TOKENS)))
                 values[key] = value
+            reg = Register.load(a.register) if doc_key(a.out) else None
+            if reg and not any(kv.startswith('document_number=') for kv in a.set):
+                number = reg.number_for(a.out)
+                if number:
+                    values['document_number'] = number
             doc, missing = render(md, tpl, values)
             _write(a.out, doc, a.force)
+            if reg:
+                proposed = DRAFT_NAME.match(os.path.basename(a.out))
+                status = ('Draft of rev %s' % proposed.group('rev')
+                          if proposed and proposed.group('rev') else 'Draft')
+                row = reg.record(a.out, a.title, None, status, values['date'],
+                                 number=values['document_number'] if has_number(values['document_number']) else None)
+                reg.save()
+                note += ' Register: %s, %s.' % (row['Number'] if has_number(row['Number']) else
+                                                'no number yet (your quality system assigns it)',
+                                                status[0].lower() + status[1:])
             if a.remove_input:
                 os.remove(a.src)
             print('Written: %s.%s' % (a.out, note))
@@ -975,6 +1410,51 @@ def main(argv=None):
         elif a.cmd == 'read':
             with open(a.file, 'rb') as f:
                 sys.stdout.write(read(f.read()))
+        elif a.cmd == 'clean':
+            plan = clean_plan(a.file, a.rev, a.settings, a.register)
+            lines = ['Writes:    %s' % plan['record'],
+                     'Removes:   %s' % ('the working notes' if plan['notes'] else
+                                        'nothing: the draft has no Working Notes heading'),
+                     'Revision:  %s, on the cover and in the footer where they show [Rev]' % plan['rev'],
+                     'Archives:  the draft, as %s' % plan['archived']]
+            if plan['previous']:
+                lines.append('Archives:  %s, the revision it replaces' % plan['previous'])
+            if plan['number']:
+                lines.append('Number:    %s, from the register' % plan['number'])
+            if plan['placeholders']:
+                lines.append('Still to fill in Word: %s' % ', '.join(plan['placeholders']))
+            if a.apply:
+                clean_apply(plan, a.settings, a.register)
+                print('Clean copy written.\n' + '\n'.join(lines))
+            else:
+                print('Nothing changed yet. With --apply, clean will:\n' + '\n'.join(lines))
+        elif a.cmd == 'register':
+            reg = Register.load(a.register)
+            if not reg:
+                raise MosDocxError('no document register at %s. The setup skill writes one.' % a.register)
+            plan = register_plan(reg)
+            if not plan:
+                print('Every document in context/ is on the register.')
+            for path, status, rev, number in plan:
+                print('%-10s %s  (%s%s)' % (number or '\u2014', reg.rel(path), status[0].lower() + status[1:],
+                                           ', rev %s' % rev if rev else ''))
+            if plan and a.apply:
+                date = format_date(load_settings(DEFAULT_SETTINGS))
+                for path, status, rev, number in plan:
+                    with open(path, 'rb') as f:
+                        data = f.read()
+                    if number and DRAFT_NAME.match(os.path.basename(path)):
+                        with open(path, 'wb') as f:
+                            f.write(stamp_number(data, number))
+                    heading = re.search(r'^# (.+)$', read(data), re.M)  # the cover's title
+                    title = (heading.group(1).strip() if heading
+                             else re.sub(r'[-_]+', ' ', doc_key(path)[1]).title())
+                    reg.record(path, title, rev, status, date, number=number)
+                reg.save()
+                print('Added to %s. Each draft carries its number on its cover; a record gets its '
+                      'number at its next revision.' % a.register)
+            elif plan:
+                print('Nothing changed yet. With --apply, these are added to the register.')
     except (MosDocxError, OSError, zipfile.BadZipFile, KeyError) as e:
         print('mosdocx: %s' % e, file=sys.stderr)
         return 1
